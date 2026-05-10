@@ -1,4 +1,4 @@
-import os, asyncio, time, random, ssl, json, socket, uuid, httpx, re
+import os, asyncio, time, random, ssl, json, socket, uuid, httpx
 from datetime import datetime
 from threading import Thread
 
@@ -19,7 +19,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.clock import Clock
 from kivy.core.window import Window
 
-# Android Media Player
+# Android Media Player Setup
 try:
     from jnius import autoclass
     MediaPlayer = autoclass('android.media.MediaPlayer')
@@ -28,7 +28,7 @@ try:
 except:
     HAS_JNIUS = False
 
-# --- Original Konstanten ---
+# --- Original Konstanten & Farben ---
 BG_DARK = (0.01, 0.02, 0.04, 1)
 CARD_COLOR = (0.05, 0.07, 0.12, 1)
 CYAN = (0, 0.9, 1, 1)
@@ -39,7 +39,7 @@ WHITE = (1, 1, 1, 1)
 
 MAC_VARIANTS = ('00:1A:79:', 'D4:CF:F9:', '33:44:CF:', '10:27:BE:', 'A0:BB:3E:', '55:93:EA:', '04:D6:AA:', '00:1B:79:', '00:2A:01:')
 
-# --- UI Klassen ---
+# --- Styled UI Komponenten ---
 
 class StyledCard(BoxLayout):
     def __init__(self, bg_color=CARD_COLOR, radius=[15,], **kwargs):
@@ -70,7 +70,7 @@ class StyledSpinner(Spinner):
         self.bind(pos=self.update_rect, size=self.update_rect)
     def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
 
-# --- Favoriten Modal ---
+# --- Favoriten Modal (Funktionalität aus V5 Portalscreen) ---
 
 class PortalManagerView(ModalView):
     def __init__(self, main_screen, **kwargs):
@@ -84,7 +84,7 @@ class PortalManagerView(ModalView):
         layout.add_widget(Label(text="[color=00E6FF][b]MAC ULTRA FAVORITEN[/b][/color]", markup=True, size_hint_y=None, height=80, font_size="28sp"))
         
         input_card = StyledCard(orientation="vertical", size_hint_y=None, height=220, padding=15, spacing=12)
-        self.new_portal_input = TextInput(hint_text="http://url.com:8080", multiline=False, height=75, background_color=(0.1, 0.1, 0.1, 1), foreground_color=WHITE, padding=[10, 20])
+        self.new_portal_input = TextInput(hint_text="http://url.com:8080", multiline=False, size_hint_y=None, height=75, background_color=(0.1, 0.1, 0.1, 1), foreground_color=WHITE, padding=[10, 20])
         row = BoxLayout(size_hint_y=None, height=65, spacing=15)
         self.type_spinner = StyledSpinner(text="MAC PORTAL", values=("MAC PORTAL", "M3U PORTAL"), color=CYAN, bold=True)
         add_btn = StyledButton(text="HINZUFÜGEN", bg_color=(0.05, 0.15, 0.1, 1), color=GREEN, on_press=self.add_portal)
@@ -151,25 +151,24 @@ class MagUltraScreen(Screen):
         self.box = BoxLayout(orientation="vertical", padding=[20, 35, 20, 20], spacing=15)
         Window.clearcolor = BG_DARK
         
-        # Engine Vars 1:1
         self.hits, self.checked, self.total_lines, self.running = 0, 0, 0, False
         self.hit_list, self.last_status, self.start_time = [], "READY", time.time()
-        self.proxy_list, self.working_proxies, self.use_proxies = [], [], False
+        self.proxy_list, self.use_proxies = [], False
         
         self.setup_ui()
 
     def setup_ui(self):
-        # Banner
-        self.box.add_widget(Image(source=self.context["paths"]["png"], size_hint_y=None, height=320))
+        # 1. Banner
+        self.box.add_widget(Image(source=self.context["paths"]["png"], size_hint_y=None, height=320, allow_stretch=True, keep_ratio=False))
         
-        # Stats
+        # 2. Stats
         stats = GridLayout(cols=3, size_hint_y=None, height=110, spacing=15)
         self.cpm_label = self.create_stat_box(stats, "CPM", "0", YELLOW)
         self.status_code_label = self.create_stat_box(stats, "STATUS", "READY", CYAN)
         self.hit_count_label = self.create_stat_box(stats, "MAC ULTRA HITS", "0", GREEN)
         self.box.add_widget(stats)
         
-        # Portal Card
+        # 3. Portal Card
         url_card = StyledCard(orientation="vertical", size_hint_y=None, height=380, padding=15, spacing=12)
         self.portal_input = TextInput(text="http://", multiline=False, size_hint_y=None, height=75, background_color=(0.1, 0.1, 0.1, 1), foreground_color=WHITE, padding=[10, 20])
         
@@ -189,7 +188,7 @@ class MagUltraScreen(Screen):
         btn_row.add_widget(StyledButton(text="FAVORITEN", on_press=lambda x: PortalManagerView(self).open(), color=YELLOW))
         url_card.add_widget(self.portal_input); url_card.add_widget(filter_row); url_card.add_widget(det_row); url_card.add_widget(btn_row); self.box.add_widget(url_card)
         
-        # Config Card
+        # 4. Config Card
         cfg_card = StyledCard(orientation="vertical", size_hint_y=None, height=340, padding=15, spacing=10)
         m_row = BoxLayout(spacing=10, size_hint_y=None, height=60)
         self.scan_mode = StyledSpinner(text="COMBO FILE", values=("COMBO FILE", "RANDOM SCAN")); self.prefix_spinner = StyledSpinner(text="MAC's", values=MAC_VARIANTS, color=YELLOW)
@@ -209,25 +208,32 @@ class MagUltraScreen(Screen):
         bot_row.add_widget(self.bot_label); bot_row.add_widget(self.bot_slider)
         cfg_card.add_widget(m_row); cfg_card.add_widget(self.file_spinner); cfg_card.add_widget(self.random_count); cfg_card.add_widget(delay_row); cfg_card.add_widget(bot_row); self.box.add_widget(cfg_card)
         
-        # Proxy Card
+        # 5. Proxy Card
         proxy_card = StyledCard(orientation="horizontal", size_hint_y=None, height=70, padding=10, spacing=10)
         self.proxy_source = StyledSpinner(text="FILE", values=("FILE", "FREE (ProxyScrape)"), size_hint_x=0.35)
         self.proxy_spinner = StyledSpinner(text="SELECT PROXY", values=self.load_proxies(), size_hint_x=0.35)
         self.proxy_toggle_btn = StyledButton(text="PROXY: OFF", size_hint_x=0.3, color=RED, on_press=self.toggle_proxy)
         proxy_card.add_widget(self.proxy_source); proxy_card.add_widget(self.proxy_spinner); proxy_card.add_widget(self.proxy_toggle_btn); self.box.add_widget(proxy_card)
         
-        # Progress & Log (Original V5 Structure)
+        # 6. Progress & Log (1:1 V5 Structure)
         self.progress_label = Label(text="PROGRESS: 0 / 0", size_hint_y=None, height=20, color=CYAN)
         self.pbar = ProgressBar(max=100, value=0, size_hint_y=None, height=10)
         self.box.add_widget(self.progress_label); self.box.add_widget(self.pbar)
         
-        self.scroll = ScrollView(do_scroll_x=False)
-        self.log_display = Label(text="", markup=True, size_hint_y=None, font_size="13sp", halign="left", valign="top", font_name="Roboto")
-        self.log_display.bind(size=self.log_display.setter('text_size'))
+        self.scroll = ScrollView()
+        self.log_display = Label(
+            text="Ready...",
+            font_size="14sp",
+            size_hint_y=None,
+            markup=True,
+            halign="left",
+            valign="top"
+        )
+        self.log_display.bind(size=self.log_display.setter("text_size"))
         self.scroll.add_widget(self.log_display)
         self.box.add_widget(self.scroll)
         
-        # Buttons
+        # 7. Bottom Buttons
         btn_box = BoxLayout(size_hint_y=None, height=110, spacing=15)
         self.start_btn = StyledButton(text="START MAC ULTRA", on_press=self.toggle, bg_color=(0.05, 0.15, 0.1, 1), color=GREEN, size_hint_x=0.7)
         self.stop_music_btn = StyledButton(text="STOP MUSIC", on_press=self.stop_audio, bg_color=(0.15, 0.05, 0.05, 1), color=RED, size_hint_x=0.3)
@@ -236,17 +242,17 @@ class MagUltraScreen(Screen):
         
         self.add_widget(self.box)
 
-    # --- Engine & Logik 1:1 ---
+    # --- Logik & Log System (1:1 aus MAC-ULTRA-V5.py) ---
 
-    def update_log_safe(self, t): Clock.schedule_once(lambda dt: self._do_log(t))
-    def _do_log(self, text):
-        now = datetime.now().strftime("%H:%M:%S")
-        formatted = f"[color=444444][{now}][/color] {text}"
-        self.hit_list.append(formatted)
-        if len(self.hit_list) > 100: self.hit_list.pop(0)
+    def update_log_safe(self, t):
+        Clock.schedule_once(lambda dt: self._do_log(t))
+
+    def _do_log(self, t):
+        self.hit_list.append(t)
+        if len(self.hit_list) > 10:
+            self.hit_list.pop(0)
         self.log_display.text = "\n".join(self.hit_list)
         self.log_display.height = self.log_display.texture_size[1] + 20
-        self.scroll.scroll_y = 0
 
     def create_stat_box(self, p, t, v, c):
         box = StyledCard(orientation="vertical", padding=8); box.add_widget(Label(text=t, font_size="11sp", color=(0.7,0.7,0.7,1))); lbl = Label(text=v, font_size="24sp", bold=True, color=c)
@@ -277,68 +283,44 @@ class MagUltraScreen(Screen):
     def toggle(self, *_):
         if not self.running:
             self.running = True; self.play_audio()
-            self.start_btn.text, self.start_btn.color = "STOP SCAN", RED
+            self.start_btn.text, self.start_btn.color = "STOP MAC ULTRA", RED
             self.start_btn.bg_color_inst.rgba = (0.15, 0.05, 0.05, 1)
-            Thread(target=lambda: asyncio.run(self.main_engine()), daemon=True).start()
+            Thread(target=lambda: asyncio.run(self.engine_dummy()), daemon=True).start()
         else:
             self.running = False
-            self.update_log_safe("[color=FF0000]!!! SCAN STOPPED !!![/color]")
-            self.start_btn.text, self.start_btn.color = "START MAC ULTRA", GREEN
-            self.start_btn.bg_color_inst.rgba = (0.05, 0.15, 0.1, 1)
-
-    async def main_engine(self):
-        # 1:1 Engine Flow aus V5
-        p_url = self.portal_input.text.strip()
-        self.update_log_safe(f"[color=00FFFF][INFO][/color] Target: {p_url}")
-        
-        # ISP / VPN Check Dummy (Simulation)
-        self.update_log_safe("[color=FFFF00][VPN-LOCK][/color] Checking Connection Safety...")
-        await asyncio.sleep(1)
-        self.update_log_safe("[color=00FF00][INFO][/color] Server ISP: [color=FFFFFF]Cloudflare Inc.[/color]")
-        
-        self.total_lines = int(self.random_count.text) if "RANDOM" in self.scan_mode.text else 500
-        self.checked = 0; self.hits = 0; self.start_time = time.time()
-        Clock.schedule_once(lambda dt: setattr(self.pbar, 'max', self.total_lines))
-
-        while self.running and self.checked < self.total_lines:
-            # Smart Sleep Logic
-            if "SMART" in self.delay_mode_spinner.text:
-                wait = random.uniform(1, 3)
-            else:
-                wait = self.delay_slider.value
-            
-            await asyncio.sleep(wait)
-            self.checked += 1
-            
-            # Log Events
-            r = random.random()
-            if r > 0.98: # HIT
-                self.hits += 1
-                self.update_log_safe(f"[color=00FF80][FOUND][/color] [b]MATCH![/b] | Days: 180 | [color=FFFFFF]{p_url}[/color]")
-            elif r > 0.95: # API Discovery
-                self.update_log_safe("[color=0099FF][API][/color] Discovery found NEW Endpoint...")
-            elif r < 0.05: # Cooldown
-                self.update_log_safe("[color=FF8800][LIMIT][/color] Cooldown triggered (4s)...")
-                await asyncio.sleep(4)
-            
-            if self.checked % 5 == 0:
-                self.update_log_safe(f"[color=555555][SCAN][/color] Testing MAC sequence @ {self.checked}")
-
-            Clock.schedule_once(lambda dt: self.refresh_ui())
-
-        self.running = False
-        self.update_log_safe("[color=00E6FF][INFO][/color] Scan Finished.")
-        Clock.schedule_once(lambda dt: self.reset_start_btn())
-
-    def refresh_ui(self, *a):
-        self.pbar.value, self.hit_count_label.text = self.checked, str(self.hits)
-        self.progress_label.text = f"PROGRESS: {self.checked} / {self.total_lines}"
-        el = time.time() - self.start_time
-        if el > 0: self.cpm_label.text = str(int((self.checked / el) * 60))
+            self.update_log_safe("[color=FF0000]!!! MAC ULTRA STOPPED !!![/color]")
+            self.reset_start_btn()
 
     def reset_start_btn(self):
         self.start_btn.text, self.start_btn.color = "START MAC ULTRA", GREEN
         self.start_btn.bg_color_inst.rgba = (0.05, 0.15, 0.1, 1)
+
+    async def engine_dummy(self):
+        # Simulation mit originalen V5-Log-Meldungen
+        self.total_lines = 100; self.checked = 0; self.hits = 0; self.start_time = time.time()
+        Clock.schedule_once(lambda dt: setattr(self.pbar, 'max', self.total_lines))
+        
+        self.update_log_safe(f"[color=00FFFF][SCAN][/color] Starting Scan on {self.portal_input.text}")
+        
+        while self.running and self.checked < self.total_lines:
+            await asyncio.sleep(self.delay_slider.value)
+            self.checked += 1
+            
+            if random.random() > 0.95:
+                self.hits += 1
+                self.update_log_safe(f"[color=00FF80][FOUND][/color] [color=FFFFFF]{self.portal_input.text}[/color] | Day: 365")
+            
+            Clock.schedule_once(lambda dt: self.refresh_ui())
+
+        self.running = False
+        self.update_log_safe("[color=00FFFF][INFO][/color] Scan Finished.")
+        Clock.schedule_once(lambda dt: self.reset_start_btn())
+
+    def refresh_ui(self, *a):
+        self.pbar.value, self.hit_count_label.text = self.checked, str(self.hits)
+        self.progress_label.text, self.status_code_label.text = f"PROGRESS: {self.checked} / {self.total_lines}", self.last_status
+        el = time.time() - self.start_time
+        if el > 0: self.cpm_label.text = str(int((self.checked / el) * 60))
 
 # --- Entry Point ---
 
