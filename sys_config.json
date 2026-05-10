@@ -19,7 +19,8 @@
         "api_method": "GET",
         "assets": {
             "png": "mac-ultra.png",
-            "mp3": "music.mp3"
+            "mp3": "music.mp3",
+            "updated_at": "2026-05-10 19:43:40"
         },
         "features": {
             "proxy_enabled": true,
