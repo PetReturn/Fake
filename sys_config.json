@@ -1,15 +1,25 @@
 {
     "master_pin": "0410",
     "system_active": true,
-    "allowed_devices": [
-        {
-            "name": "Morpheus",
-            "device_id": "eff24de87fc53568"
-        }
-    ],
+    "allowed_devices": [],
     "assets": {
         "png": "mac-ultra.png",
         "mp3": "music.mp3",
         "updated_at": "2026-05-10 16:54:52"
+    },
+    "locked_config": {
+        "max_bots": 25,
+        "max_random_count": 1000,
+        "api_path": "/player_api.php",
+        "api_method": "GET",
+        "assets": {
+            "png": "mac-ultra.png",
+            "mp3": "music.mp3"
+        },
+        "features": {
+            "proxy_enabled": true,
+            "random_scan_enabled": true,
+            "detail_save_enabled": true
+        }
     }
 }
