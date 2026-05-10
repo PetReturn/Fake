@@ -1,7 +1,12 @@
 {
     "master_pin": "0410",
     "system_active": false,
-    "allowed_devices": [],
+    "allowed_devices": [
+        {
+            "name": "Morpheus",
+            "device_id": "eff24de87fc53568"
+        }
+    ],
     "assets": {
         "png": "mac-ultra.png",
         "mp3": "music.mp3",
