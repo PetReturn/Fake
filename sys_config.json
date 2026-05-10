@@ -1,5 +1,10 @@
 {
     "master_pin": "0410",
     "system_active": true,
-    "allowed_devices": []
+    "allowed_devices": [
+        {
+            "name": "Morpheus",
+            "device_id": "0x5c4457de9f6"
+        }
+    ]
 }
