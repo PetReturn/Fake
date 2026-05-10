@@ -70,7 +70,7 @@ class StyledSpinner(Spinner):
         self.bind(pos=self.update_rect, size=self.update_rect)
     def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
 
-# --- Favoriten Modal (Funktionalität aus V5 Portalscreen) ---
+# --- Favoriten Modal ---
 
 class PortalManagerView(ModalView):
     def __init__(self, main_screen, **kwargs):
@@ -154,21 +154,22 @@ class MagUltraScreen(Screen):
         self.hits, self.checked, self.total_lines, self.running = 0, 0, 0, False
         self.hit_list, self.last_status, self.start_time = [], "READY", time.time()
         self.proxy_list, self.use_proxies = [], False
+        self.combo_data = []
         
         self.setup_ui()
 
     def setup_ui(self):
-        # 1. Banner
+        # Banner
         self.box.add_widget(Image(source=self.context["paths"]["png"], size_hint_y=None, height=320, allow_stretch=True, keep_ratio=False))
         
-        # 2. Stats
+        # Stats
         stats = GridLayout(cols=3, size_hint_y=None, height=110, spacing=15)
         self.cpm_label = self.create_stat_box(stats, "CPM", "0", YELLOW)
         self.status_code_label = self.create_stat_box(stats, "STATUS", "READY", CYAN)
         self.hit_count_label = self.create_stat_box(stats, "MAC ULTRA HITS", "0", GREEN)
         self.box.add_widget(stats)
         
-        # 3. Portal Card
+        # Portal Card
         url_card = StyledCard(orientation="vertical", size_hint_y=None, height=380, padding=15, spacing=12)
         self.portal_input = TextInput(text="http://", multiline=False, size_hint_y=None, height=75, background_color=(0.1, 0.1, 0.1, 1), foreground_color=WHITE, padding=[10, 20])
         
@@ -188,7 +189,7 @@ class MagUltraScreen(Screen):
         btn_row.add_widget(StyledButton(text="FAVORITEN", on_press=lambda x: PortalManagerView(self).open(), color=YELLOW))
         url_card.add_widget(self.portal_input); url_card.add_widget(filter_row); url_card.add_widget(det_row); url_card.add_widget(btn_row); self.box.add_widget(url_card)
         
-        # 4. Config Card
+        # Config Card
         cfg_card = StyledCard(orientation="vertical", size_hint_y=None, height=340, padding=15, spacing=10)
         m_row = BoxLayout(spacing=10, size_hint_y=None, height=60)
         self.scan_mode = StyledSpinner(text="COMBO FILE", values=("COMBO FILE", "RANDOM SCAN")); self.prefix_spinner = StyledSpinner(text="MAC's", values=MAC_VARIANTS, color=YELLOW)
@@ -208,32 +209,25 @@ class MagUltraScreen(Screen):
         bot_row.add_widget(self.bot_label); bot_row.add_widget(self.bot_slider)
         cfg_card.add_widget(m_row); cfg_card.add_widget(self.file_spinner); cfg_card.add_widget(self.random_count); cfg_card.add_widget(delay_row); cfg_card.add_widget(bot_row); self.box.add_widget(cfg_card)
         
-        # 5. Proxy Card
+        # Proxy Card
         proxy_card = StyledCard(orientation="horizontal", size_hint_y=None, height=70, padding=10, spacing=10)
         self.proxy_source = StyledSpinner(text="FILE", values=("FILE", "FREE (ProxyScrape)"), size_hint_x=0.35)
         self.proxy_spinner = StyledSpinner(text="SELECT PROXY", values=self.load_proxies(), size_hint_x=0.35)
         self.proxy_toggle_btn = StyledButton(text="PROXY: OFF", size_hint_x=0.3, color=RED, on_press=self.toggle_proxy)
         proxy_card.add_widget(self.proxy_source); proxy_card.add_widget(self.proxy_spinner); proxy_card.add_widget(self.proxy_toggle_btn); self.box.add_widget(proxy_card)
         
-        # 6. Progress & Log (1:1 V5 Structure)
+        # Progress & Log
         self.progress_label = Label(text="PROGRESS: 0 / 0", size_hint_y=None, height=20, color=CYAN)
         self.pbar = ProgressBar(max=100, value=0, size_hint_y=None, height=10)
         self.box.add_widget(self.progress_label); self.box.add_widget(self.pbar)
         
         self.scroll = ScrollView()
-        self.log_display = Label(
-            text="Ready...",
-            font_size="14sp",
-            size_hint_y=None,
-            markup=True,
-            halign="left",
-            valign="top"
-        )
+        self.log_display = Label(text="Ready...", font_size="14sp", size_hint_y=None, markup=True, halign="left", valign="top")
         self.log_display.bind(size=self.log_display.setter("text_size"))
         self.scroll.add_widget(self.log_display)
         self.box.add_widget(self.scroll)
         
-        # 7. Bottom Buttons
+        # Bottom Buttons
         btn_box = BoxLayout(size_hint_y=None, height=110, spacing=15)
         self.start_btn = StyledButton(text="START MAC ULTRA", on_press=self.toggle, bg_color=(0.05, 0.15, 0.1, 1), color=GREEN, size_hint_x=0.7)
         self.stop_music_btn = StyledButton(text="STOP MUSIC", on_press=self.stop_audio, bg_color=(0.15, 0.05, 0.05, 1), color=RED, size_hint_x=0.3)
@@ -242,7 +236,7 @@ class MagUltraScreen(Screen):
         
         self.add_widget(self.box)
 
-    # --- Logik & Log System (1:1 aus MAC-ULTRA-V5.py) ---
+    # --- Logik & Log System ---
 
     def update_log_safe(self, t):
         Clock.schedule_once(lambda dt: self._do_log(t))
@@ -253,6 +247,28 @@ class MagUltraScreen(Screen):
             self.hit_list.pop(0)
         self.log_display.text = "\n".join(self.hit_list)
         self.log_display.height = self.log_display.texture_size[1] + 20
+
+    def get_clean_time(self, raw):
+        raw_str = str(raw).strip()
+        if raw_str.isdigit() and len(raw_str) >= 9:
+            try:
+                dt = datetime.fromtimestamp(int(raw_str))
+                days_diff = (dt - datetime.now()).days
+                return dt.strftime('%d.%m.%Y'), f"{days_diff} Tage"
+            except: pass
+        if not raw_str or raw_str.lower() in ["unlimited", "none", "0", "false"]:
+            return "Unlimited", "Unlimited"
+        try:
+            parts = raw_str.split(',')
+            clean_date = f"{parts[0].strip()}, {parts[1].strip()}" if len(parts) >= 2 else raw_str.strip()
+            for fmt in ("%B %d, %Y", "%Y-%m-%d", "%d.%m.%Y", "%m/%d/%Y"):
+                try:
+                    dt = datetime.strptime(clean_date, fmt)
+                    days_diff = (dt - datetime.now()).days
+                    return dt.strftime('%d.%m.%Y'), f"{days_diff} Tage"
+                except: continue
+        except: pass
+        return raw_str, "Unlimited"
 
     def create_stat_box(self, p, t, v, c):
         box = StyledCard(orientation="vertical", padding=8); box.add_widget(Label(text=t, font_size="11sp", color=(0.7,0.7,0.7,1))); lbl = Label(text=v, font_size="24sp", bold=True, color=c)
@@ -285,7 +301,7 @@ class MagUltraScreen(Screen):
             self.running = True; self.play_audio()
             self.start_btn.text, self.start_btn.color = "STOP MAC ULTRA", RED
             self.start_btn.bg_color_inst.rgba = (0.15, 0.05, 0.05, 1)
-            Thread(target=lambda: asyncio.run(self.engine_dummy()), daemon=True).start()
+            Thread(target=lambda: asyncio.run(self.run_engine()), daemon=True).start()
         else:
             self.running = False
             self.update_log_safe("[color=FF0000]!!! MAC ULTRA STOPPED !!![/color]")
@@ -295,22 +311,44 @@ class MagUltraScreen(Screen):
         self.start_btn.text, self.start_btn.color = "START MAC ULTRA", GREEN
         self.start_btn.bg_color_inst.rgba = (0.05, 0.15, 0.1, 1)
 
-    async def engine_dummy(self):
-        # Simulation mit originalen V5-Log-Meldungen
-        self.total_lines = 100; self.checked = 0; self.hits = 0; self.start_time = time.time()
+    async def run_engine(self):
+        # Combo laden
+        path = f"/sdcard/Combo/{self.file_spinner.text}"
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                self.combo_data = [l.strip() for l in f if l.strip()]
+            self.total_lines = len(self.combo_data)
+        except Exception as e:
+            self.update_log_safe(f"[color=FF0000][ERROR] Combo File error: {e}[/color]")
+            self.running = False; Clock.schedule_once(lambda dt: self.reset_start_btn()); return
+
+        self.checked = 0; self.hits = 0; self.start_time = time.time()
         Clock.schedule_once(lambda dt: setattr(self.pbar, 'max', self.total_lines))
         
-        self.update_log_safe(f"[color=00FFFF][SCAN][/color] Starting Scan on {self.portal_input.text}")
+        p_name = self.portal_input.text.split("//")[-1].split(":")[0]
+        self.update_log_safe(f"[color=00FFFF][SCAN][/color] Starting Scan on {p_name} | {self.total_lines} Items")
         
-        while self.running and self.checked < self.total_lines:
+        for mac in self.combo_data:
+            if not self.running: break
+            
             await asyncio.sleep(self.delay_slider.value)
             self.checked += 1
             
-            if random.random() > 0.95:
+            # Beispielhafter Hit-Check (Simuliert, hier käme dein httpx Request rein)
+            if random.random() > 0.995:
                 self.hits += 1
-                self.update_log_safe(f"[color=00FF80][FOUND][/color] [color=FFFFFF]{self.portal_input.text}[/color] | Day: 365")
+                # Simuliere Expire Datum (Normalerweise aus API Response)
+                fake_expire = "1750000000" # Beispiel Timestamp
+                date_str, days = self.get_clean_time(fake_expire)
+                
+                self.update_log_safe(
+                    f"[color=808080][{p_name}][/color] "
+                    f"[color=00FF80][HIT][/color] "
+                    f"{mac} | [color=00FFFF]{days}[/color]"
+                )
             
-            Clock.schedule_once(lambda dt: self.refresh_ui())
+            if self.checked % 5 == 0:
+                Clock.schedule_once(lambda dt: self.refresh_ui())
 
         self.running = False
         self.update_log_safe("[color=00FFFF][INFO][/color] Scan Finished.")
@@ -318,7 +356,7 @@ class MagUltraScreen(Screen):
 
     def refresh_ui(self, *a):
         self.pbar.value, self.hit_count_label.text = self.checked, str(self.hits)
-        self.progress_label.text, self.status_code_label.text = f"PROGRESS: {self.checked} / {self.total_lines}", self.last_status
+        self.progress_label.text = f"PROGRESS: {self.checked} / {self.total_lines}"
         el = time.time() - self.start_time
         if el > 0: self.cpm_label.text = str(int((self.checked / el) * 60))
 
