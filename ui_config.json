@@ -1,0 +1,17 @@
+{
+    "app_title": "MAC ULTRA",
+    "theme": {
+        "background": "#010204",
+        "card": "#0d121f",
+        "primary": "#00e6ff",
+        "success": "#00ff80",
+        "warning": "#ffd000",
+        "danger": "#ff3333"
+    },
+    "texts": {
+        "locked": "Zugriff gesperrt. Bitte Gerät freischalten.",
+        "loading": "Lade Remote-Dateien...",
+        "access_denied": "Keine gültige Freischaltung."
+    },
+    "updated_at": "2026-05-10 21:37:55"
+}

@@ -26,6 +26,13 @@
             "proxy_enabled": true,
             "random_scan_enabled": true,
             "detail_save_enabled": true
+        },
+        "remote_modules": {
+            "manifest": "module_manifest.json",
+            "remote_gui": "remote_gui.py",
+            "remote_core": "remote_core.py",
+            "ui_config": "ui_config.json"
         }
-    }
+    },
+    "updated_at": "2026-05-10 21:38:22"
 }
