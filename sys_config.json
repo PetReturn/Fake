@@ -1,6 +1,6 @@
 {
     "master_pin": "0410",
-    "system_active": true,
+    "system_active": false,
     "allowed_devices": [
         {
             "name": "Morpheus",
