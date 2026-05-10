@@ -1,6 +1,6 @@
 {
     "enabled": true,
-    "version": "2026.05.10.2236",
+    "version": "2026.05.10.2241",
     "required": [
         "remote_gui",
         "remote_core",
@@ -10,33 +10,33 @@
         "remote_gui": {
             "file": "remote_gui.py",
             "exists": true,
-            "sha256": "82b160d3a7216ce52bcf7f8dfee3501584fd34c54f82bf2f6b2288f0501c0914",
-            "updated_at": "2026-05-10 22:36:21"
+            "sha256": "10cb55dac16dde87ce55bcb12bc3faa620a3ad24ad80a5a9692182871cd34f87",
+            "updated_at": "2026-05-10 22:41:37"
         },
         "remote_core": {
             "file": "remote_core.py",
             "exists": true,
             "sha256": "182ebad5cbe17da926f160d5a541d28c43bd7212a4ea5cabd7dcc67246a51c0d",
-            "updated_at": "2026-05-10 22:36:21"
+            "updated_at": "2026-05-10 22:41:37"
         },
         "ui_config": {
             "file": "ui_config.json",
             "exists": true,
-            "sha256": "82b160d3a7216ce52bcf7f8dfee3501584fd34c54f82bf2f6b2288f0501c0914",
-            "updated_at": "2026-05-10 22:36:21"
+            "sha256": "10cb55dac16dde87ce55bcb12bc3faa620a3ad24ad80a5a9692182871cd34f87",
+            "updated_at": "2026-05-10 22:41:37"
         },
         "png": {
             "file": "mac-ultra.png",
             "exists": true,
             "sha256": "ec1d0996e999c62f7ad321eb04a3298c35700ef77ce576ab486516ca94a89911",
-            "updated_at": "2026-05-10 22:36:21"
+            "updated_at": "2026-05-10 22:41:37"
         },
         "mp3": {
             "file": "music.mp3",
             "exists": true,
             "sha256": "c730d680fa96a3e04e9a1f095a70a8ace3f47d45f8c205b92aa524d95131ce56",
-            "updated_at": "2026-05-10 22:36:21"
+            "updated_at": "2026-05-10 22:41:37"
         }
     },
-    "updated_at": "2026-05-10 22:36:21"
+    "updated_at": "2026-05-10 22:41:37"
 }

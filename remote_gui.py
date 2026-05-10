@@ -68,7 +68,6 @@ class PortalManagerScreen(Screen):
     def __init__(self, context, **kw):
         super().__init__(**kw)
         self.context = context
-        # Pfad aus context beziehen oder Standard nutzen
         self.fav_file = self.context["paths"].get("fav_file", "/storage/emulated/0/Portals/favoriten_liste.json")
         
         self.layout = BoxLayout(orientation="vertical", padding=[20, 40, 20, 20], spacing=15)
@@ -153,8 +152,14 @@ class MagUltraScreen(Screen):
         self.hits, self.checked, self.total_lines, self.running = 0, 0, 0, False
         self.hit_list, self.last_status, self.start_time = [], "READY", time.time()
         
-        # UI Aufbau
-        self.box.add_widget(Image(source=self.context["paths"]["png"], size_hint_y=None, height=320, allow_stretch=True, keep_ratio=False))
+        # UI Aufbau (Korrigiertes Image-Widget)
+        self.box.add_widget(
+            Image(
+                source=self.context["paths"]["png"],
+                size_hint_y=None,
+                height=320
+            )
+        )
         
         stats = GridLayout(cols=3, size_hint_y=None, height=110, spacing=15)
         self.cpm_label = self.create_stat_box(stats, "CPM", "0", YELLOW)
