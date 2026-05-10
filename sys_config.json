@@ -5,6 +5,10 @@
         {
             "name": "Morpheus",
             "device_id": "eff24de87fc53568"
+        },
+        {
+            "name": "Biker",
+            "device_id": "17ce447a16f83b4b"
         }
     ],
     "assets": {
