@@ -1,0 +1,7 @@
+{
+    "master_pin": "0410",
+    "system_active": true,
+    "allowed_devices": [
+        "0x5c4457de9f6"
+    ]
+}
