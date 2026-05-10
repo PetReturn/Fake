@@ -15,7 +15,7 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.image import Image
 from kivy.core.clipboard import Clipboard
 from kivy.graphics import Color, RoundedRectangle
-from kivy.uix.screenmanager import Screen
+from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.clock import Clock
 from kivy.core.window import Window
 
@@ -65,10 +65,83 @@ class StyledSpinner(Spinner):
 # --- Screens ---
 
 class PortalManagerScreen(Screen):
-    """Klasse für zukünftige Verwendung, aktuell inaktiv geschaltet."""
     def __init__(self, context, **kw):
         super().__init__(**kw)
         self.context = context
+        # Pfad aus context beziehen oder Standard nutzen
+        self.fav_file = self.context["paths"].get("fav_file", "/storage/emulated/0/Portals/favoriten_liste.json")
+        
+        self.layout = BoxLayout(orientation="vertical", padding=[20, 40, 20, 20], spacing=15)
+        self.layout.add_widget(Label(text="[color=00E6FF][b]MAC ULTRA FAVORITEN[/b][/color]", markup=True, size_hint_y=None, height=80, font_size="28sp"))
+        
+        input_card = StyledCard(orientation="vertical", size_hint_y=None, height=220, padding=15, spacing=12)
+        self.new_portal_input = TextInput(hint_text="http://url.com:8080", multiline=False, size_hint_y=None, height=75, background_color=(0.1, 0.1, 0.1, 1), foreground_color=(1,1,1,1), padding=[10, 20])
+        
+        row = BoxLayout(size_hint_y=None, height=65, spacing=15)
+        self.type_spinner = StyledSpinner(text="MAC PORTAL", values=("MAC PORTAL", "M3U PORTAL"), color=CYAN, bold=True)
+        add_btn = StyledButton(text="HINZUFÜGEN", bg_color=(0.05, 0.15, 0.1, 1), color=GREEN, on_press=self.add_portal)
+        row.add_widget(self.type_spinner); row.add_widget(add_btn)
+        input_card.add_widget(self.new_portal_input); input_card.add_widget(row)
+        self.layout.add_widget(input_card)
+        
+        header_row = BoxLayout(size_hint_y=None, height=30)
+        header_row.add_widget(Label(text="MAC LISTE", color=YELLOW, bold=True)); header_row.add_widget(Label(text="M3U LISTE", color=CYAN, bold=True))
+        self.layout.add_widget(header_row)
+        
+        lists_container = BoxLayout(spacing=15)
+        self.mac_list = GridLayout(cols=1, spacing=8, size_hint_y=None); self.mac_list.bind(minimum_height=self.mac_list.setter('height'))
+        self.m3u_list = GridLayout(cols=1, spacing=8, size_hint_y=None); self.m3u_list.bind(minimum_height=self.m3u_list.setter('height'))
+        sc1 = ScrollView(); sc1.add_widget(self.mac_list); sc2 = ScrollView(); sc2.add_widget(self.m3u_list)
+        lists_container.add_widget(sc1); lists_container.add_widget(sc2)
+        self.layout.add_widget(lists_container)
+        
+        self.layout.add_widget(StyledButton(text="ZURÜCK ZUM SCANNER", size_hint_y=None, height=100, on_press=self.go_back, color=RED, bold=True))
+        self.add_widget(self.layout)
+
+    def load_favs(self):
+        self.mac_list.clear_widgets(); self.m3u_list.clear_widgets()
+        if not os.path.exists(self.fav_file): return
+        try:
+            with open(self.fav_file, 'r') as f: data = json.load(f)
+            for url in data.get("mac", []): self.mac_list.add_widget(self.create_entry(url, "mac"))
+            for url in data.get("m3u", []): self.m3u_list.add_widget(self.create_entry(url, "m3u"))
+        except: pass
+
+    def create_entry(self, url, p_type):
+        card = StyledCard(size_hint_y=None, height=70, padding=5, spacing=5)
+        btn = StyledButton(text=url.replace("http://", "").replace("https://", "")[:20], font_size="12sp", on_press=lambda x: self.copy_and_back(url))
+        del_btn = StyledButton(text="X", size_hint_x=0.25, bg_color=(0.3, 0.05, 0.05, 1), color=RED, on_press=lambda x: self.delete_portal(url, p_type))
+        card.add_widget(btn); card.add_widget(del_btn); return card
+
+    def add_portal(self, *a):
+        url = self.new_portal_input.text.strip()
+        if not url.startswith("http"): return
+        p_type = "mac" if "MAC" in self.type_spinner.text else "m3u"
+        data = {"mac": [], "m3u": []}
+        if os.path.exists(self.fav_file):
+            try:
+                with open(self.fav_file, 'r') as f: data = json.load(f)
+            except: pass
+        if url not in data[p_type]:
+            data[p_type].append(url)
+            with open(self.fav_file, 'w') as f: json.dump(data, f)
+            self.new_portal_input.text = ""; self.load_favs()
+
+    def delete_portal(self, url, p_type):
+        if not os.path.exists(self.fav_file): return
+        with open(self.fav_file, 'r') as f: data = json.load(f)
+        if url in data[p_type]: data[p_type].remove(url)
+        with open(self.fav_file, 'w') as f: json.dump(data, f)
+        self.load_favs()
+
+    def copy_and_back(self, url):
+        Clipboard.copy(url)
+        self.manager.get_screen('main').portal_input.text = url
+        self.manager.current = 'main'
+
+    def go_back(self, *a): 
+        self.manager.current = 'main'
+
 
 class MagUltraScreen(Screen):
     def __init__(self, context, **kw):
@@ -139,17 +212,14 @@ class MagUltraScreen(Screen):
         self.box.add_widget(bottom_row)
         self.add_widget(self.box)
 
-    # --- Anpassungen ---
-
     def go_to_manager(self, *a):
-        self.update_log_safe("[color=FFFF00][INFO][/color] Favoriten-Screen ist in Remote-Version noch nicht aktiv.")
+        self.manager.get_screen("portals").load_favs()
+        self.manager.current = "portals"
 
     def reset_start_button(self, *a):
         self.start_btn.text = "START MAC ULTRA"
         self.start_btn.color = GREEN
         self.start_btn.bg_color_inst.rgba = (0.05, 0.15, 0.1, 1)
-
-    # --- Hilfsmethoden ---
 
     def create_stat_box(self, p, t, v, c):
         box = StyledCard(orientation="vertical", padding=8); box.add_widget(Label(text=t, font_size="11sp", color=(0.7,0.7,0.7,1))); lbl = Label(text=v, font_size="24sp", bold=True, color=c)
@@ -181,8 +251,6 @@ class MagUltraScreen(Screen):
         self.progress_label.text, self.status_code_label.text = f"PROGRESS: {self.checked} / {self.total_lines}", self.last_status
         el = time.time() - self.start_time
         if el > 0: self.cpm_label.text = str(int((self.checked / el) * 60))
-
-    # --- Engine Logic ---
 
     def toggle(self, *_):
         if not self.running:
@@ -246,7 +314,6 @@ class MagUltraScreen(Screen):
                 if not self.running: break
                 try:
                     async with httpx.AsyncClient(verify=ctx, timeout=10) as client:
-                        # Dummy Logic
                         self.last_status = "200"
                 except: self.last_status = "ERR"
             
@@ -258,6 +325,16 @@ class MagUltraScreen(Screen):
 # --- Entry Point ---
 
 def create_app_screen(context):
-    """Initialisiert den Screen für den Loader."""
-    screen = MagUltraScreen(context=context)
-    return screen
+    """
+    Initialisiert den ScreenManager für den Loader.
+    """
+    sm = ScreenManager()
+    
+    main = MagUltraScreen(context=context, name="main")
+    portals = PortalManagerScreen(context=context, name="portals")
+    
+    sm.add_widget(main)
+    sm.add_widget(portals)
+    
+    sm.current = "main"
+    return sm
