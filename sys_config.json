@@ -1,10 +1,5 @@
 {
     "master_pin": "0410",
     "system_active": true,
-    "allowed_devices": [
-        {
-            "name": "Rene",
-            "device_id": "138248634875984"
-        }
-    ]
+    "allowed_devices": []
 }
