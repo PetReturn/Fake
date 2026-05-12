@@ -1,6 +1,6 @@
 {
     "master_pin": "0410",
-    "system_active": false,
+    "system_active": true,
     "allowed_devices": [
         {
             "name": "Morpheus",
@@ -35,5 +35,5 @@
             "ui_config": "ui_config.json"
         }
     },
-    "updated_at": "2026-05-12 14:17:08"
+    "updated_at": "2026-05-12 14:17:17"
 }
