@@ -33,7 +33,16 @@
             "remote_gui": "remote_gui.py",
             "remote_core": "remote_core.py",
             "ui_config": "ui_config.json"
+        },
+        "apk_build": {
+            "enabled": true,
+            "main_source": "MAC-ULTRA-V1.py",
+            "main_target": "main.py",
+            "buildozer_spec": "buildozer.spec",
+            "workflow": ".github/workflows/build.yml",
+            "artifact_name": "MAC-ULTRA-APK",
+            "updated_at": "2026-05-14 22:10:05"
         }
     },
-    "updated_at": "2026-05-12 14:17:17"
+    "updated_at": "2026-05-14 22:10:05"
 }

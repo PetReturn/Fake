@@ -1,0 +1,48 @@
+name: Build APK
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify buildozer.spec
+        run: |
+          echo "===== buildozer.spec ====="
+          cat buildozer.spec
+          echo "===== requirements line ====="
+          grep -n "^requirements" buildozer.spec
+          echo "===== bootstrap line ====="
+          grep -n "p4a.bootstrap" buildozer.spec || true
+          echo "===== permissions line ====="
+          grep -n "^android.permissions" buildozer.spec || true
+          echo "===== icon line ====="
+          grep -n "^icon.filename" buildozer.spec || true
+          if grep -q "kivy==" buildozer.spec; then
+            echo "ERROR: buildozer.spec contains pinned kivy version"
+            exit 1
+          fi
+
+      - name: Remove old local build cache
+        run: |
+          rm -rf .buildozer bin
+
+      - name: Build APK with official Buildozer Docker image
+        run: |
+          docker run --rm             -v "$PWD":/home/user/hostcwd             -w /home/user/hostcwd             kivy/buildozer:latest             -v android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAC-ULTRA-APK
+          path: bin/*.apk
