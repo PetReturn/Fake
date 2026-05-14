@@ -3,11 +3,6 @@
     "system_active": true,
     "allowed_devices": [
         {
-            "name": "Morpheus",
-            "device_id": "eff24de87fc53568",
-            "created_at": "2026-05-14 22:30:58"
-        },
-        {
             "name": "test",
             "device_id": "fe200a7dca72ba14",
             "created_at": "2026-05-14 22:32:55"
@@ -49,5 +44,5 @@
             "updated_at": "2026-05-14 22:10:05"
         }
     },
-    "updated_at": "2026-05-14 22:32:55"
+    "updated_at": "2026-05-14 22:45:02"
 }
