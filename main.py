@@ -273,7 +273,7 @@ COMMON_PORTS = [80, 8080, 8880, 25461, 8000, 2082, 2086, 2095, 8443, 443]
 # --- REMOTE SECURITY / FREISCHALTUNG ---
 # Für echten Killswitch muss diese URL öffentlich erreichbar sein.
 # Bei privatem GitHub-Repo funktioniert raw.githubusercontent.com ohne Token NICHT.
-SECURITY_CONFIG_URL = "https://raw.githubusercontent.com/Morpheus0410/MAC-ULTRA/main/sys_config.json"
+SECURITY_CONFIG_URL = "https://raw.githubusercontent.com/PetReturn/Fake/main/sys_config.json"
 SECURITY_FAIL_CLOSED = True
 
 def get_android_id():
