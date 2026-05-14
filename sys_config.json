@@ -46,8 +46,8 @@
             "buildozer_spec": "buildozer.spec",
             "workflow": ".github/workflows/build.yml",
             "artifact_name": "MAC-ULTRA-APK",
-            "updated_at": "2026-05-14 22:46:37"
+            "updated_at": "2026-05-14 23:30:02"
         }
     },
-    "updated_at": "2026-05-14 23:08:00"
+    "updated_at": "2026-05-14 23:30:02"
 }
