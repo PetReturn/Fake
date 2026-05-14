@@ -272,11 +272,11 @@ COMMON_PORTS = [80, 8080, 8880, 25461, 8000, 2082, 2086, 2095, 8443, 443]
 
 # --- REMOTE SECURITY / FREISCHALTUNG ---
 # Für echten Killswitch muss diese URL öffentlich erreichbar sein.
-# Bei privatem GitHub-Repo funktioniert raw.githubusercontent.com ohne Token NICHT.
 SECURITY_CONFIG_URL = "https://raw.githubusercontent.com/PetReturn/Fake/main/sys_config.json"
 SECURITY_FAIL_CLOSED = True
 
 def get_android_id():
+    """Original Android-ID. Bei Debug-APKs kann sie nach jedem Neubuild wechseln."""
     if platform != "android":
         return "DESKTOP-TEST"
     try:
@@ -289,104 +289,88 @@ def get_android_id():
     except Exception:
         return "UNKNOWN"
 
-def fetch_security_config():
+def get_mac_ultra_id():
+    """Stabile MAC-ULTRA Geräte-ID.
+    Wird einmal erstellt und in /storage/emulated/0/MAC-ULTRA/device_id.txt gespeichert.
+    Diese ID bleibt auch nach APK-Updates gleich, solange die Datei nicht gelöscht wird.
+    """
     try:
-        req = urllib.request.Request(SECURITY_CONFIG_URL, headers={"User-Agent": "MAC-ULTRA-Android"})
-        with urllib.request.urlopen(req, timeout=8) as r:
-            data = json.loads(r.read().decode("utf-8"))
-            return data if isinstance(data, dict) else None
-    except Exception:
-        return None
+        public_dir = "/storage/emulated/0/MAC-ULTRA"
+        os.makedirs(public_dir, exist_ok=True)
+        id_file = os.path.join(public_dir, "device_id.txt")
 
-def is_device_allowed(config, android_id):
+        if os.path.exists(id_file):
+            with open(id_file, "r", encoding="utf-8") as f:
+                saved = f.read().strip()
+                if saved:
+                    return saved
+
+        base = get_android_id()
+        raw = f"MAC-ULTRA::{base}::{time.time()}::{random.randint(100000, 999999)}"
+        new_id = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+        with open(id_file, "w", encoding="utf-8") as f:
+            f.write(new_id)
+
+        return new_id
+    except Exception:
+        base = get_android_id()
+        raw = f"MAC-ULTRA-FALLBACK::{base}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+def fetch_security_config():
+    """Lädt sys_config.json von GitHub. httpx ist stabiler in der APK als urllib."""
+    try:
+        url = SECURITY_CONFIG_URL + ("?t=" + str(int(time.time())))
+        response = httpx.get(
+            url,
+            timeout=10,
+            follow_redirects=True,
+            headers={
+                "User-Agent": "MAC-ULTRA-Android",
+                "Cache-Control": "no-cache",
+            }
+        )
+        if response.status_code != 200:
+            return None, f"HTTP {response.status_code}"
+        data = response.json()
+        return (data if isinstance(data, dict) else None), "OK"
+    except Exception as e:
+        return None, str(e)
+
+def is_device_allowed(config, device_id):
     if not isinstance(config, dict):
         return not SECURITY_FAIL_CLOSED
+
     if not config.get("system_active", True):
         return False
+
     allowed = config.get("allowed_devices", [])
-    android_id = str(android_id).strip()
+    device_id = str(device_id).strip()
+
     for dev in allowed:
         if isinstance(dev, dict):
-            if str(dev.get("device_id", "")).strip() == android_id:
+            if str(dev.get("device_id", "")).strip() == device_id:
                 return True
-        elif str(dev).strip() == android_id:
+        elif str(dev).strip() == device_id:
             return True
+
     return False
 
-
-BG_DARK = (0.01, 0.02, 0.04, 1)
-CARD_COLOR = (0.05, 0.07, 0.12, 1)
-CYAN = (0, 0.9, 1, 1)
-GREEN = (0, 1, 0.5, 1)
-RED = (1, 0.2, 0.2, 1)
-YELLOW = (1, 0.8, 0, 1)
-WHITE = (1, 1, 1, 1)
-
-DEFAULT_CIPHERS = (
-    "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:"
-    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-)
-
-ATTACK_PROFILES = [
-    {'User-Agent': 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2721', 'X-User-Agent': 'Model: MAG254; Link: Ethernet'},
-    {'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, wie Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'},
-    {'User-Agent': 'okhttp/4.9.1'},
-    {'User-Agent': 'Kodi/20.2 (X11; Linux x86_64) App_Bitness/64'},
-    {'User-Agent': 'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebkit/537.36 (KHTML, like Gecko) SamsungBrowser/4.0 Chrome/76.0.3809.146 TV Safari/537.36'}
-]
-
-GEO_DATA = {
-    'IT': {'ip': ['151', '185', '79', '93'], 'lang': 'it-IT,it;q=0.9', 'tz': 'Europe/Rome'},
-    'DE': {'ip': ['85', '188', '93', '95'], 'lang': 'de-DE,de;q=0.9', 'tz': 'Europe/Berlin'},
-    'FR': {'ip': ['5', '80', '78', '176'], 'lang': 'fr-FR,fr;q=0.9', 'tz': 'Europe/Paris'},
-    'US': {'ip': ['3', '13', '34', '52'], 'lang': 'en-US,en;q=0.9', 'tz': 'America/New_York'},
-    'ES': {'ip': ['83', '95', '79'], 'lang': 'es-ES,es;q=0.9', 'tz': 'Europe/Madrid'}
-}
-
-MAC_VARIANTS = ('00:1A:79:', 'D4:CF:F9:', '33:44:CF:', '10:27:BE:', 'A0:BB:3E:', '55:93:EA:', '04:D6:AA:', '00:1B:79:', '00:2A:01:')
-
-# --- STYLED COMPONENTS ---
-class StyledCard(BoxLayout):
-    def __init__(self, bg_color=CARD_COLOR, radius=[15,], **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas.before:
-            self.bg_color_inst = Color(*bg_color)
-            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=radius)
-        self.bind(pos=self.update_rect, size=self.update_rect)
-    def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
-
-class StyledButton(Button):
-    def __init__(self, bg_color=CARD_COLOR, radius=[10,], **kwargs):
-        super().__init__(**kwargs)
-        self.background_normal, self.background_color = "", (0,0,0,0)
-        with self.canvas.before:
-            self.bg_color_inst = Color(*bg_color)
-            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=radius)
-        self.bind(pos=self.update_rect, size=self.update_rect)
-    def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
-
-class StyledSpinner(Spinner):
-    def __init__(self, bg_color=CARD_COLOR, radius=[10,], **kwargs):
-        super().__init__(**kwargs)
-        self.background_normal, self.background_color = "", (0,0,0,0)
-        with self.canvas.before:
-            self.bg_color_inst = Color(*bg_color)
-            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=radius)
-        self.bind(pos=self.update_rect, size=self.update_rect)
-    def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
 
 # --- SCREENS ---
 
 class SecurityGateScreen(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.android_id = get_android_id()
+        self.android_id = get_mac_ultra_id()
+        self.real_android_id = get_android_id()
         layout = BoxLayout(orientation="vertical", padding=[25, 45, 25, 25], spacing=18)
         layout.add_widget(Image(source='mac-ultra.png', size_hint_y=None, height=260, allow_stretch=True, keep_ratio=True))
         layout.add_widget(Label(text="[color=00E6FF][b]MAC ULTRA SECURITY[/b][/color]", markup=True, font_size="26sp", size_hint_y=None, height=70))
         self.status_lbl = Label(text="Prüfe Gerätefreigabe...", markup=True, color=WHITE, font_size="17sp")
         layout.add_widget(self.status_lbl)
-        self.id_lbl = Label(text=f"[color=FFFF00]Android-ID:[/color]\n{self.android_id}", markup=True, font_size="15sp", size_hint_y=None, height=95)
+        self.id_lbl = Label(text=f"[color=FFFF00]MAC-ULTRA-ID:[/color]\n{self.android_id}\n[color=888888]MAC-ULTRA-ID:[/color] {self.real_android_id}", markup=True, font_size="15sp", size_hint_y=None, height=95)
         layout.add_widget(self.id_lbl)
         btn_row = BoxLayout(size_hint_y=None, height=75, spacing=12)
         btn_row.add_widget(StyledButton(text="ID KOPIEREN", color=YELLOW, on_press=self.copy_id))
@@ -399,18 +383,18 @@ class SecurityGateScreen(Screen):
 
     def copy_id(self, *a):
         Clipboard.copy(self.android_id)
-        self.status_lbl.text = "[color=00FF00]Android-ID wurde kopiert. An Admin senden.[/color]"
+        self.status_lbl.text = "[color=00FF00]MAC-ULTRA-ID wurde kopiert. Diese ID im Hoster freischalten.[/color]"
 
     def check_access(self, *a):
         self.status_lbl.text = "[color=FFFF00]Prüfe Remote-Freigabe...[/color]"
         Thread(target=self._check_thread, daemon=True).start()
 
     def _check_thread(self):
-        config = fetch_security_config()
+        config, error = fetch_security_config()
         allowed = is_device_allowed(config, self.android_id)
-        Clock.schedule_once(lambda dt: self._finish_check(allowed, config))
+        Clock.schedule_once(lambda dt: self._finish_check(allowed, config, error))
 
-    def _finish_check(self, allowed, config):
+    def _finish_check(self, allowed, config, error=''):
         if allowed:
             self.status_lbl.text = "[color=00FF00]Gerät freigegeben. Weiterleitung...[/color]"
             Clock.schedule_once(lambda dt: setattr(self.manager, "current", "intro"), 0.8)
@@ -419,11 +403,11 @@ class SecurityGateScreen(Screen):
             if isinstance(config, dict) and not config.get("system_active", True):
                 reason = "System ist aktuell gesperrt"
             elif config is None:
-                reason = "Remote-Config nicht erreichbar"
+                reason = f"Remote-Config nicht erreichbar: {error}"
             self.status_lbl.text = (
                 f"[color=FF3333][b]ZUGRIFF GESPERRT[/b][/color]\n"
                 f"{reason}\n\n"
-                f"Sende deine Android-ID an den Admin."
+                f"Sende deine MAC-ULTRA-ID an den Admin."
             )
 
 
