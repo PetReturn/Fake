@@ -1,13 +1,7 @@
 {
     "master_pin": "0410",
     "system_active": true,
-    "allowed_devices": [
-        {
-            "name": "test",
-            "device_id": "fe200a7dca72ba14",
-            "created_at": "2026-05-14 22:32:55"
-        }
-    ],
+    "allowed_devices": [],
     "assets": {
         "png": "mac-ultra.png",
         "mp3": "music.mp3",
@@ -44,5 +38,5 @@
             "updated_at": "2026-05-14 22:10:05"
         }
     },
-    "updated_at": "2026-05-14 22:45:02"
+    "updated_at": "2026-05-14 22:45:12"
 }
