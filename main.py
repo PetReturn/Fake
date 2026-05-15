@@ -1417,7 +1417,11 @@ class MagApp(App):
 
             android_id = get_android_id() or "Keine Android-ID gefunden"
 
-            root = FloatLayout()
+            root = BoxLayout(
+                orientation="vertical",
+                padding=[26, 34, 26, 26],
+                spacing=18
+            )
 
             with root.canvas.before:
                 Color(0.01, 0.02, 0.04, 1)
@@ -1433,34 +1437,33 @@ class MagApp(App):
 
             root.bind(pos=update_root_bg, size=update_root_bg)
 
-            card = StyledCard(
-                orientation="vertical",
-                padding=[28, 30, 28, 26],
-                spacing=18,
-                bg_color=(0.03, 0.05, 0.09, 1),
-                size_hint=(0.92, None),
-                height=700,
-                pos_hint={"center_x": 0.5, "center_y": 0.5}
-            )
-
+            # Gleiches Bild wie auf der Scanner-Seite
             try:
-                banner = Image(
-                    source="assets/banner.png",
-                    allow_stretch=True,
-                    keep_ratio=True,
+                top_logo = Image(
+                    source="mac-ultra.png",
                     size_hint_y=None,
-                    height=160
+                    height=320,
+                    allow_stretch=True,
+                    keep_ratio=True
                 )
-                card.add_widget(banner)
-            except:
-                pass
+                root.add_widget(top_logo)
+            except Exception:
+                root.add_widget(Label(
+                    text="[color=00E6FF][b]MAC ULTRA[/b][/color]",
+                    markup=True,
+                    font_size="34sp",
+                    size_hint_y=None,
+                    height=120,
+                    halign="center",
+                    valign="middle"
+                ))
 
-            logo = Label(
+            title = Label(
                 text="[color=00E6FF][b]MAC ULTRA[/b][/color]",
                 markup=True,
                 font_size="34sp",
                 size_hint_y=None,
-                height=52,
+                height=58,
                 halign="center",
                 valign="middle"
             )
@@ -1468,9 +1471,9 @@ class MagApp(App):
             status = Label(
                 text="[color=FF4444][b]GERÄT NICHT FREIGESCHALTET[/b][/color]",
                 markup=True,
-                font_size="20sp",
+                font_size="21sp",
                 size_hint_y=None,
-                height=42,
+                height=46,
                 halign="center",
                 valign="middle"
             )
@@ -1479,14 +1482,14 @@ class MagApp(App):
                 text=(
                     "[color=FFFFFF]"
                     "Dieses Gerät besitzt aktuell keine aktive Freischaltung.\n\n"
-                    "Bitte sende deine Android-ID an den Administrator, "
-                    "damit dein Zugang aktiviert werden kann."
+                    "Bitte kopiere deine Android-ID und sende sie an den Administrator.\n"
+                    "Nach der Aktivierung kannst du die App neu starten."
                     "[/color]"
                 ),
                 markup=True,
                 font_size="16sp",
                 size_hint_y=None,
-                height=130,
+                height=145,
                 halign="center",
                 valign="middle"
             )
@@ -1502,9 +1505,9 @@ class MagApp(App):
             id_label = Label(
                 text="[color=00E6FF][b]DEINE ANDROID-ID[/b][/color]",
                 markup=True,
-                font_size="15sp",
+                font_size="16sp",
                 size_hint_y=None,
-                height=32,
+                height=38,
                 halign="center",
                 valign="middle"
             )
@@ -1515,22 +1518,22 @@ class MagApp(App):
                 multiline=False,
                 font_size="22sp",
                 size_hint_y=None,
-                height=72,
-                background_color=(0.08, 0.10, 0.14, 1),
+                height=82,
+                background_color=(0.07, 0.09, 0.14, 1),
                 foreground_color=(0, 0.95, 1, 1),
                 cursor_color=(0, 0.95, 1, 1),
                 halign="center",
-                padding=[10, 20]
+                padding=[10, 24]
             )
 
             copy_btn = StyledButton(
                 text="ANDROID-ID KOPIEREN",
                 size_hint_y=None,
-                height=72,
+                height=78,
                 bg_color=(0.02, 0.22, 0.13, 1),
                 color=(0, 1, 0.5, 1),
                 bold=True,
-                font_size="16sp"
+                font_size="17sp"
             )
 
             def copy_android_id(instance):
@@ -1542,25 +1545,31 @@ class MagApp(App):
             exit_btn = StyledButton(
                 text="APP BEENDEN",
                 size_hint_y=None,
-                height=68,
+                height=74,
                 bg_color=(0.18, 0.04, 0.04, 1),
                 color=(1, 0.45, 0.45, 1),
                 bold=True,
-                font_size="16sp"
+                font_size="17sp"
             )
 
             def close_app(instance):
-                App.get_running_app().stop()
-                Window.close()
+                try:
+                    App.get_running_app().stop()
+                except Exception:
+                    pass
+                try:
+                    Window.close()
+                except Exception:
+                    pass
 
             exit_btn.bind(on_press=close_app)
 
             hint = Label(
-                text="[color=AAAAAA]Nach der Freischaltung die App bitte neu starten.[/color]",
+                text="[color=AAAAAA]Sende diese ID an den Admin für die Freischaltung.[/color]",
                 markup=True,
-                font_size="13sp",
+                font_size="14sp",
                 size_hint_y=None,
-                height=36,
+                height=44,
                 halign="center",
                 valign="middle"
             )
@@ -1568,24 +1577,24 @@ class MagApp(App):
             footer = Label(
                 text="[color=666666]Created by Morpheus[/color]",
                 markup=True,
-                font_size="13sp",
+                font_size="14sp",
                 size_hint_y=None,
-                height=30,
+                height=40,
                 halign="center",
                 valign="middle"
             )
 
-            card.add_widget(logo)
-            card.add_widget(status)
-            card.add_widget(message)
-            card.add_widget(id_label)
-            card.add_widget(id_box)
-            card.add_widget(copy_btn)
-            card.add_widget(exit_btn)
-            card.add_widget(hint)
-            card.add_widget(footer)
-
-            root.add_widget(card)
+            # Flexible Zwischenräume, damit die komplette Seite genutzt wird
+            root.add_widget(title)
+            root.add_widget(status)
+            root.add_widget(message)
+            root.add_widget(id_label)
+            root.add_widget(id_box)
+            root.add_widget(copy_btn)
+            root.add_widget(exit_btn)
+            root.add_widget(hint)
+            root.add_widget(Label(text="", size_hint_y=1))
+            root.add_widget(footer)
 
             return root
 
