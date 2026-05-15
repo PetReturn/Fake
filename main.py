@@ -1435,20 +1435,32 @@ class MagApp(App):
 
             card = StyledCard(
                 orientation="vertical",
-                padding=[24, 26, 24, 22],
-                spacing=14,
-                bg_color=(0.04, 0.06, 0.10, 1),
+                padding=[28, 30, 28, 26],
+                spacing=18,
+                bg_color=(0.03, 0.05, 0.09, 1),
                 size_hint=(0.92, None),
-                height=520,
+                height=700,
                 pos_hint={"center_x": 0.5, "center_y": 0.5}
             )
+
+            try:
+                banner = Image(
+                    source="assets/banner.png",
+                    allow_stretch=True,
+                    keep_ratio=True,
+                    size_hint_y=None,
+                    height=160
+                )
+                card.add_widget(banner)
+            except:
+                pass
 
             logo = Label(
                 text="[color=00E6FF][b]MAC ULTRA[/b][/color]",
                 markup=True,
-                font_size="30sp",
+                font_size="34sp",
                 size_hint_y=None,
-                height=48,
+                height=52,
                 halign="center",
                 valign="middle"
             )
@@ -1456,7 +1468,7 @@ class MagApp(App):
             status = Label(
                 text="[color=FF4444][b]GERÄT NICHT FREIGESCHALTET[/b][/color]",
                 markup=True,
-                font_size="18sp",
+                font_size="20sp",
                 size_hint_y=None,
                 height=42,
                 halign="center",
@@ -1472,9 +1484,9 @@ class MagApp(App):
                     "[/color]"
                 ),
                 markup=True,
-                font_size="15sp",
+                font_size="16sp",
                 size_hint_y=None,
-                height=120,
+                height=130,
                 halign="center",
                 valign="middle"
             )
@@ -1490,9 +1502,9 @@ class MagApp(App):
             id_label = Label(
                 text="[color=00E6FF][b]DEINE ANDROID-ID[/b][/color]",
                 markup=True,
-                font_size="14sp",
+                font_size="15sp",
                 size_hint_y=None,
-                height=28,
+                height=32,
                 halign="center",
                 valign="middle"
             )
@@ -1501,22 +1513,22 @@ class MagApp(App):
                 text=str(android_id),
                 readonly=True,
                 multiline=False,
-                font_size="20sp",
+                font_size="22sp",
                 size_hint_y=None,
-                height=62,
+                height=72,
                 background_color=(0.08, 0.10, 0.14, 1),
                 foreground_color=(0, 0.95, 1, 1),
                 cursor_color=(0, 0.95, 1, 1),
                 halign="center",
-                padding=[10, 16]
+                padding=[10, 20]
             )
 
             copy_btn = StyledButton(
                 text="ANDROID-ID KOPIEREN",
                 size_hint_y=None,
-                height=66,
+                height=72,
                 bg_color=(0.02, 0.22, 0.13, 1),
-                color=GREEN,
+                color=(0, 1, 0.5, 1),
                 bold=True,
                 font_size="16sp"
             )
@@ -1527,10 +1539,26 @@ class MagApp(App):
 
             copy_btn.bind(on_press=copy_android_id)
 
+            exit_btn = StyledButton(
+                text="APP BEENDEN",
+                size_hint_y=None,
+                height=68,
+                bg_color=(0.18, 0.04, 0.04, 1),
+                color=(1, 0.45, 0.45, 1),
+                bold=True,
+                font_size="16sp"
+            )
+
+            def close_app(instance):
+                App.get_running_app().stop()
+                Window.close()
+
+            exit_btn.bind(on_press=close_app)
+
             hint = Label(
                 text="[color=AAAAAA]Nach der Freischaltung die App bitte neu starten.[/color]",
                 markup=True,
-                font_size="12sp",
+                font_size="13sp",
                 size_hint_y=None,
                 height=36,
                 halign="center",
@@ -1553,6 +1581,7 @@ class MagApp(App):
             card.add_widget(id_label)
             card.add_widget(id_box)
             card.add_widget(copy_btn)
+            card.add_widget(exit_btn)
             card.add_widget(hint)
             card.add_widget(footer)
 
