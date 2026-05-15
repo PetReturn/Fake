@@ -10,6 +10,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
@@ -1416,169 +1417,146 @@ class MagApp(App):
 
             android_id = get_android_id() or "Keine Android-ID gefunden"
 
-            root = BoxLayout(
-                orientation="vertical",
-                padding=[25, 25, 25, 25]
-            )
+            root = FloatLayout()
 
             with root.canvas.before:
                 Color(0.01, 0.02, 0.04, 1)
-                root.bg_rect = RoundedRectangle(
+                root_bg = RoundedRectangle(
                     pos=root.pos,
                     size=root.size,
                     radius=[0]
                 )
 
             def update_root_bg(instance, value):
-                root.bg_rect.pos = root.pos
-                root.bg_rect.size = root.size
+                root_bg.pos = root.pos
+                root_bg.size = root.size
 
             root.bind(pos=update_root_bg, size=update_root_bg)
 
-            # Abstand oben
-            root.add_widget(Label(
-                text="",
-                size_hint_y=0.12
-            ))
-
-            # Hauptkarte
             card = StyledCard(
                 orientation="vertical",
-                padding=[22, 28, 22, 24],
-                spacing=18,
-                size_hint=(1, 0.62),
-                bg_color=(0.04, 0.07, 0.12, 1)
+                padding=[24, 26, 24, 22],
+                spacing=14,
+                bg_color=(0.04, 0.06, 0.10, 1),
+                size_hint=(0.92, None),
+                height=520,
+                pos_hint={"center_x": 0.5, "center_y": 0.5}
             )
 
-            title = Label(
-                text=(
-                    "[color=00E6FF][b]MAC ULTRA[/b][/color]"
-                ),
+            logo = Label(
+                text="[color=00E6FF][b]MAC ULTRA[/b][/color]",
                 markup=True,
                 font_size="30sp",
-                bold=True,
                 size_hint_y=None,
-                height=50,
-                halign="center"
+                height=48,
+                halign="center",
+                valign="middle"
             )
 
             status = Label(
-                text=(
-                    "[color=FF4444][b]GERÄT NICHT FREIGESCHALTET[/b][/color]"
-                ),
+                text="[color=FF4444][b]GERÄT NICHT FREIGESCHALTET[/b][/color]",
                 markup=True,
-                font_size="20sp",
+                font_size="18sp",
                 size_hint_y=None,
-                height=40,
-                halign="center"
+                height=42,
+                halign="center",
+                valign="middle"
             )
 
             message = Label(
                 text=(
                     "[color=FFFFFF]"
-                    "Dieses Gerät besitzt aktuell keine aktive Freischaltung.
-
-"
+                    "Dieses Gerät besitzt aktuell keine aktive Freischaltung.\n\n"
                     "Bitte sende deine Android-ID an den Administrator, "
                     "damit dein Zugang aktiviert werden kann."
                     "[/color]"
                 ),
                 markup=True,
-                font_size="16sp",
-                halign="center",
-                valign="middle",
+                font_size="15sp",
                 size_hint_y=None,
-                height=120
+                height=120,
+                halign="center",
+                valign="middle"
             )
 
             message.bind(
                 width=lambda instance, value: setattr(
                     instance,
                     "text_size",
-                    (value - 20, None)
+                    (max(value - 20, 100), None)
                 )
             )
 
-            id_title = Label(
-                text="[color=00E6FF][b]ANDROID-ID[/b][/color]",
+            id_label = Label(
+                text="[color=00E6FF][b]DEINE ANDROID-ID[/b][/color]",
                 markup=True,
-                font_size="15sp",
+                font_size="14sp",
                 size_hint_y=None,
-                height=28
+                height=28,
+                halign="center",
+                valign="middle"
             )
 
             id_box = TextInput(
                 text=str(android_id),
                 readonly=True,
                 multiline=False,
-                font_size="22sp",
+                font_size="20sp",
                 size_hint_y=None,
-                height=68,
-                background_color=(0.08, 0.10, 0.15, 1),
+                height=62,
+                background_color=(0.08, 0.10, 0.14, 1),
                 foreground_color=(0, 0.95, 1, 1),
                 cursor_color=(0, 0.95, 1, 1),
                 halign="center",
-                padding=[10, 18]
+                padding=[10, 16]
             )
 
             copy_btn = StyledButton(
                 text="ANDROID-ID KOPIEREN",
                 size_hint_y=None,
-                height=72,
-                bg_color=(0.02, 0.25, 0.14, 1),
-                color=(0, 1, 0.5, 1),
+                height=66,
+                bg_color=(0.02, 0.22, 0.13, 1),
+                color=GREEN,
                 bold=True,
-                font_size="17sp"
+                font_size="16sp"
             )
 
             def copy_android_id(instance):
                 Clipboard.copy(str(android_id))
-                copy_btn.text = "ID ERFOLGREICH KOPIERT ✓"
+                copy_btn.text = "ID KOPIERT ✓"
 
             copy_btn.bind(on_press=copy_android_id)
 
-            admin = Label(
-                text=(
-                    "[color=AAAAAA]"
-                    "Sende diese ID an den Admin für die Aktivierung."
-                    "[/color]"
-                ),
+            hint = Label(
+                text="[color=AAAAAA]Nach der Freischaltung die App bitte neu starten.[/color]",
                 markup=True,
-                font_size="13sp",
+                font_size="12sp",
                 size_hint_y=None,
-                height=32,
-                halign="center"
+                height=36,
+                halign="center",
+                valign="middle"
             )
 
             footer = Label(
-                text=(
-                    "[color=555555]"
-                    "Created by Morpheus"
-                    "[/color]"
-                ),
+                text="[color=666666]Created by Morpheus[/color]",
                 markup=True,
-                font_size="14sp",
+                font_size="13sp",
                 size_hint_y=None,
-                height=26,
-                halign="center"
+                height=30,
+                halign="center",
+                valign="middle"
             )
 
-            card.add_widget(title)
+            card.add_widget(logo)
             card.add_widget(status)
             card.add_widget(message)
-            card.add_widget(id_title)
+            card.add_widget(id_label)
             card.add_widget(id_box)
             card.add_widget(copy_btn)
-            card.add_widget(admin)
+            card.add_widget(hint)
             card.add_widget(footer)
 
             root.add_widget(card)
-
-            # Abstand unten
-            root.add_widget(Label(
-                text="",
-                size_hint_y=0.18
-            ))
 
             return root
 
