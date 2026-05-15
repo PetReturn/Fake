@@ -3,12 +3,6 @@
     "system_active": true,
     "allowed_devices": [
         {
-            "name": "Rene",
-            "android_id": "ad2faa76365a4d09",
-            "active": true,
-            "created_at": "2026-05-15 20:05:18"
-        },
-        {
             "name": "Horst",
             "android_id": "cf9a3501b06b926b",
             "active": true,
@@ -51,5 +45,5 @@
             "updated_at": "2026-05-15 20:40:22"
         }
     },
-    "updated_at": "2026-05-15 21:01:41"
+    "updated_at": "2026-05-15 21:01:50"
 }
