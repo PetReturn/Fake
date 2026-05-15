@@ -1,14 +1,7 @@
 {
     "master_pin": "0410",
     "system_active": true,
-    "allowed_devices": [
-        {
-            "name": "Horst",
-            "android_id": "cf9a3501b06b926b",
-            "active": true,
-            "created_at": "2026-05-15 20:33:47"
-        }
-    ],
+    "allowed_devices": [],
     "assets": {
         "png": "mac-ultra.png",
         "mp3": "music.mp3",
@@ -45,5 +38,5 @@
             "updated_at": "2026-05-15 20:40:22"
         }
     },
-    "updated_at": "2026-05-15 21:01:50"
+    "updated_at": "2026-05-15 21:01:58"
 }
