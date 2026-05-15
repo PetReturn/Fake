@@ -371,7 +371,7 @@ MAC_VARIANTS = ('00:1A:79:', 'D4:CF:F9:', '33:44:CF:', '10:27:BE:', 'A0:BB:3E:',
 # GITHUB DEVICE SECURITY
 # =========================================================
 
-CONFIG_URL = "https://raw.githubusercontent.com/PetReturn/Fake/main/sys_config.json"
+CONFIG_URL = "https://cdn.jsdelivr.net/gh/PetReturn/Fake@main/sys_config.json"
 
 
 def get_android_id():
