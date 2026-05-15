@@ -1,4 +1,8 @@
-import os, asyncio, time, urllib.parse, httpx, random, ssl, json, socket, hashlib, urllib.request
+# MAC ULTRA PRIVATE BUILD VERSION
+# PRIVATE REPO:
+# https://github.com/Morpheus0410/MAC-ULTRA
+
+import os, asyncio, time, urllib.parse, httpx, random, ssl, json, socket, hashlib
 from datetime import datetime
 from threading import Thread
 
@@ -199,7 +203,7 @@ def first_writable_dir(kind):
     return get_app_base_dir()
 
 
-# --- ANDROID SPEICHERBERECHTIGUNG ---
+# --- ANDROID SPEICHERBERECHTIGUNG (LEGACY) ---
 def request_android_storage_permissions():
     if platform != "android":
         return
@@ -233,6 +237,67 @@ def first_existing_file(filename, folders):
             return path
     return None
 
+
+def get_fav_file_candidates():
+    candidates = [
+        "/storage/emulated/0/Portals/favoriten_liste.json",
+        "/sdcard/Portals/favoriten_liste.json",
+    ]
+
+    ext_app = get_android_external_app_dir()
+    if ext_app:
+        candidates.append(os.path.join(ext_app, "Portals", "favoriten_liste.json"))
+
+    try:
+        candidates.append(os.path.join(get_app_base_dir(), "Portals", "favoriten_liste.json"))
+    except Exception:
+        pass
+
+    out = []
+    for path in candidates:
+        if path and path not in out:
+            out.append(path)
+    return out
+
+
+def load_favorites_data():
+    for fav_path in get_fav_file_candidates():
+        if not os.path.exists(fav_path):
+            continue
+        try:
+            with open(fav_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                return {
+                    "mac": loaded.get("mac", []) if isinstance(loaded.get("mac", []), list) else [],
+                    "m3u": loaded.get("m3u", []) if isinstance(loaded.get("m3u", []), list) else [],
+                }
+        except Exception:
+            pass
+    return {"mac": [], "m3u": []}
+
+
+def save_favorites_data(data):
+    if not isinstance(data, dict):
+        data = {"mac": [], "m3u": []}
+
+    data = {
+        "mac": data.get("mac", []) if isinstance(data.get("mac", []), list) else [],
+        "m3u": data.get("m3u", []) if isinstance(data.get("m3u", []), list) else [],
+    }
+
+    # zuerst öffentlichen Hauptspeicher versuchen
+    for fav_path in get_fav_file_candidates():
+        try:
+            os.makedirs(os.path.dirname(fav_path), exist_ok=True)
+            with open(fav_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            return fav_path
+        except Exception:
+            continue
+    return None
+
+
 # --- AUTOMATISCHE ORDNER-ERSTELLUNG & PFADE ---
 def ensure_environment():
     ensure_app_folders()
@@ -265,205 +330,311 @@ except:
     HAS_JNIUS = False
 
 # --- KONFIGURATION & FARBEN ---
-FAV_FILE = os.path.join(first_writable_dir("Portals"), "favoriten_liste.json")
+FAV_FILE = get_fav_file_candidates()[0]
 # Pfad für Musik angepasst (Asset-Name statt Absolutpfad für APK)
 MUSIC_PATH = "music.mp3" 
 COMMON_PORTS = [80, 8080, 8880, 25461, 8000, 2082, 2086, 2095, 8443, 443]
 
-# --- REMOTE SECURITY / FREISCHALTUNG ---
-# Für echten Killswitch muss diese URL öffentlich erreichbar sein.
-SECURITY_CONFIG_URL = "https://raw.githubusercontent.com/PetReturn/Fake/main/sys_config.json"
-SECURITY_FAIL_CLOSED = True
+BG_DARK = (0.01, 0.02, 0.04, 1)
+CARD_COLOR = (0.05, 0.07, 0.12, 1)
+CYAN = (0, 0.9, 1, 1)
+GREEN = (0, 1, 0.5, 1)
+RED = (1, 0.2, 0.2, 1)
+YELLOW = (1, 0.8, 0, 1)
+WHITE = (1, 1, 1, 1)
+
+DEFAULT_CIPHERS = (
+    "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:"
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+)
+
+ATTACK_PROFILES = [
+    {'User-Agent': 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2721', 'X-User-Agent': 'Model: MAG254; Link: Ethernet'},
+    {'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, wie Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'},
+    {'User-Agent': 'okhttp/4.9.1'},
+    {'User-Agent': 'Kodi/20.2 (X11; Linux x86_64) App_Bitness/64'},
+    {'User-Agent': 'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebkit/537.36 (KHTML, like Gecko) SamsungBrowser/4.0 Chrome/76.0.3809.146 TV Safari/537.36'}
+]
+
+GEO_DATA = {
+    'IT': {'ip': ['151', '185', '79', '93'], 'lang': 'it-IT,it;q=0.9', 'tz': 'Europe/Rome'},
+    'DE': {'ip': ['85', '188', '93', '95'], 'lang': 'de-DE,de;q=0.9', 'tz': 'Europe/Berlin'},
+    'FR': {'ip': ['5', '80', '78', '176'], 'lang': 'fr-FR,fr;q=0.9', 'tz': 'Europe/Paris'},
+    'US': {'ip': ['3', '13', '34', '52'], 'lang': 'en-US,en;q=0.9', 'tz': 'America/New_York'},
+    'ES': {'ip': ['83', '95', '79'], 'lang': 'es-ES,es;q=0.9', 'tz': 'Europe/Madrid'}
+}
+
+MAC_VARIANTS = ('00:1A:79:', 'D4:CF:F9:', '33:44:CF:', '10:27:BE:', 'A0:BB:3E:', '55:93:EA:', '04:D6:AA:', '00:1B:79:', '00:2A:01:')
+
+# =========================================================
+# GITHUB DEVICE SECURITY
+# =========================================================
+
+CONFIG_URL = "https://raw.githubusercontent.com/PetReturn/Fake/main/sys_config.json"
+
 
 def get_android_id():
-    """Original Android-ID. Bei Debug-APKs kann sie nach jedem Neubuild wechseln."""
     if platform != "android":
-        return "DESKTOP-TEST"
+        return "PC-TEST"
+
     try:
         from jnius import autoclass
-        PythonActivity = autoclass("org.kivy.android.PythonActivity")
-        SettingsSecure = autoclass("android.provider.Settings$Secure")
-        activity = PythonActivity.mActivity
-        resolver = activity.getContentResolver()
-        return str(SettingsSecure.getString(resolver, SettingsSecure.ANDROID_ID))
-    except Exception:
-        return "UNKNOWN"
 
-def get_mac_ultra_id():
-    """Stabile MAC-ULTRA Geräte-ID.
-    Wird einmal erstellt und in /storage/emulated/0/MAC-ULTRA/device_id.txt gespeichert.
-    Diese ID bleibt auch nach APK-Updates gleich, solange die Datei nicht gelöscht wird.
-    """
-    try:
-        public_dir = "/storage/emulated/0/MAC-ULTRA"
-        os.makedirs(public_dir, exist_ok=True)
-        id_file = os.path.join(public_dir, "device_id.txt")
-
-        if os.path.exists(id_file):
-            with open(id_file, "r", encoding="utf-8") as f:
-                saved = f.read().strip()
-                if saved:
-                    return saved
-
-        base = get_android_id()
-        raw = f"MAC-ULTRA::{base}::{time.time()}::{random.randint(100000, 999999)}"
-        new_id = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
-
-        with open(id_file, "w", encoding="utf-8") as f:
-            f.write(new_id)
-
-        return new_id
-    except Exception:
-        base = get_android_id()
-        raw = f"MAC-ULTRA-FALLBACK::{base}"
-        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
-
-def fetch_security_config():
-    """Lädt sys_config.json von GitHub. httpx ist stabiler in der APK als urllib."""
-    try:
-        url = SECURITY_CONFIG_URL + ("?t=" + str(int(time.time())))
-        response = httpx.get(
-            url,
-            timeout=10,
-            follow_redirects=True,
-            headers={
-                "User-Agent": "MAC-ULTRA-Android",
-                "Cache-Control": "no-cache",
-            }
+        PythonActivity = autoclass(
+            "org.kivy.android.PythonActivity"
         )
-        if response.status_code != 200:
-            return None, f"HTTP {response.status_code}"
-        data = response.json()
-        return (data if isinstance(data, dict) else None), "OK"
+
+        SettingsSecure = autoclass(
+            "android.provider.Settings$Secure"
+        )
+
+        resolver = (
+            PythonActivity.mActivity
+            .getContentResolver()
+        )
+
+        android_id = SettingsSecure.getString(
+            resolver,
+            SettingsSecure.ANDROID_ID
+        )
+
+        return str(android_id).strip()
+
+    except Exception:
+        return None
+
+
+async def github_device_allowed():
+
+    android_id = get_android_id()
+
+    if not android_id:
+        return False, "Keine Android-ID"
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=10
+        ) as client:
+
+            r = await client.get(CONFIG_URL)
+
+            data = r.json()
+
+        if not data.get("system_active", True):
+            return False, "System deaktiviert"
+
+        devices = data.get("allowed_devices", [])
+
+        for dev in devices:
+
+            dev_id = str(
+                dev.get("android_id", "")
+            ).strip()
+
+            active = dev.get("active", True)
+
+            if (
+                dev_id == android_id
+                and active is True
+            ):
+                return True, android_id
+
+        return False, (
+            f"Nicht freigeschaltet:\n{android_id}"
+        )
+
     except Exception as e:
-        return None, str(e)
 
-def is_device_allowed(config, device_id):
-    if not isinstance(config, dict):
-        return not SECURITY_FAIL_CLOSED
+        return False, (
+            f"GitHub Fehler:\n{e}"
+        )
 
-    if not config.get("system_active", True):
-        return False
 
-    allowed = config.get("allowed_devices", [])
-    device_id = str(device_id).strip()
+# --- STYLED COMPONENTS ---
+class StyledCard(BoxLayout):
+    def __init__(self, bg_color=CARD_COLOR, radius=[15,], **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas.before:
+            self.bg_color_inst = Color(*bg_color)
+            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=radius)
+        self.bind(pos=self.update_rect, size=self.update_rect)
+    def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
 
-    for dev in allowed:
-        if isinstance(dev, dict):
-            if str(dev.get("device_id", "")).strip() == device_id:
-                return True
-        elif str(dev).strip() == device_id:
-            return True
+class StyledButton(Button):
+    def __init__(self, bg_color=CARD_COLOR, radius=[10,], **kwargs):
+        super().__init__(**kwargs)
+        self.background_normal, self.background_color = "", (0,0,0,0)
+        with self.canvas.before:
+            self.bg_color_inst = Color(*bg_color)
+            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=radius)
+        self.bind(pos=self.update_rect, size=self.update_rect)
+    def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
 
-    return False
-
+class StyledSpinner(Spinner):
+    def __init__(self, bg_color=CARD_COLOR, radius=[10,], **kwargs):
+        super().__init__(**kwargs)
+        self.background_normal, self.background_color = "", (0,0,0,0)
+        with self.canvas.before:
+            self.bg_color_inst = Color(*bg_color)
+            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=radius)
+        self.bind(pos=self.update_rect, size=self.update_rect)
+    def update_rect(self, *args): self.rect.pos, self.rect.size = self.pos, self.size
 
 # --- SCREENS ---
-
-class SecurityGateScreen(Screen):
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        self.android_id = get_mac_ultra_id()
-        self.real_android_id = get_android_id()
-        layout = BoxLayout(orientation="vertical", padding=[25, 45, 25, 25], spacing=18)
-        layout.add_widget(Image(source='mac-ultra.png', size_hint_y=None, height=260, allow_stretch=True, keep_ratio=True))
-        layout.add_widget(Label(text="[color=00E6FF][b]MAC ULTRA SECURITY[/b][/color]", markup=True, font_size="26sp", size_hint_y=None, height=70))
-        self.status_lbl = Label(text="Prüfe Gerätefreigabe...", markup=True, color=WHITE, font_size="17sp")
-        layout.add_widget(self.status_lbl)
-        self.id_lbl = Label(text=f"[color=FFFF00]MAC-ULTRA-ID:[/color]\n{self.android_id}\n[color=888888]MAC-ULTRA-ID:[/color] {self.real_android_id}", markup=True, font_size="15sp", size_hint_y=None, height=95)
-        layout.add_widget(self.id_lbl)
-        btn_row = BoxLayout(size_hint_y=None, height=75, spacing=12)
-        btn_row.add_widget(StyledButton(text="ID KOPIEREN", color=YELLOW, on_press=self.copy_id))
-        btn_row.add_widget(StyledButton(text="NEU PRÜFEN", color=CYAN, on_press=self.check_access))
-        layout.add_widget(btn_row)
-        self.add_widget(layout)
-
-    def on_enter(self):
-        Clock.schedule_once(lambda dt: self.check_access(), 0.5)
-
-    def copy_id(self, *a):
-        Clipboard.copy(self.android_id)
-        self.status_lbl.text = "[color=00FF00]MAC-ULTRA-ID wurde kopiert. Diese ID im Hoster freischalten.[/color]"
-
-    def check_access(self, *a):
-        self.status_lbl.text = "[color=FFFF00]Prüfe Remote-Freigabe...[/color]"
-        Thread(target=self._check_thread, daemon=True).start()
-
-    def _check_thread(self):
-        config, error = fetch_security_config()
-        allowed = is_device_allowed(config, self.android_id)
-        Clock.schedule_once(lambda dt: self._finish_check(allowed, config, error))
-
-    def _finish_check(self, allowed, config, error=''):
-        if allowed:
-            self.status_lbl.text = "[color=00FF00]Gerät freigegeben. Weiterleitung...[/color]"
-            Clock.schedule_once(lambda dt: setattr(self.manager, "current", "intro"), 0.8)
-        else:
-            reason = "Nicht freigeschaltet"
-            if isinstance(config, dict) and not config.get("system_active", True):
-                reason = "System ist aktuell gesperrt"
-            elif config is None:
-                reason = f"Remote-Config nicht erreichbar: {error}"
-            self.status_lbl.text = (
-                f"[color=FF3333][b]ZUGRIFF GESPERRT[/b][/color]\n"
-                f"{reason}\n\n"
-                f"Sende deine MAC-ULTRA-ID an den Admin."
-            )
 
 
 class IntroScreen(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
+
+        root = BoxLayout(
+            orientation="vertical",
+            padding=[20, 30, 20, 20],
+            spacing=14
+        )
+
         with self.canvas.before:
             Color(0.01, 0.02, 0.04, 1)
-            self.rect = RoundedRectangle(size=Window.size, pos=self.pos)
-        self.bind(size=self._update_rect, pos=self._update_rect)
+            self.bg_rect = RoundedRectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self._update_bg, size=self._update_bg)
 
-        layout = BoxLayout(orientation="vertical", padding=[20, 30, 20, 20], spacing=15)
-        layout.add_widget(Image(source='mac-ultra.png', size_hint_y=None, height=260, allow_stretch=True, keep_ratio=True))
+        try:
+            if os.path.exists("mac-ultra.png"):
+                logo = Image(source="mac-ultra.png", size_hint_y=None, height=260)
+                root.add_widget(logo)
+            else:
+                root.add_widget(Label(
+                    text="[color=00E6FF][b]MAC ULTRA[/b][/color]",
+                    markup=True,
+                    size_hint_y=None,
+                    height=100,
+                    font_size="30sp"
+                ))
+        except Exception:
+            root.add_widget(Label(
+                text="[color=00E6FF][b]MAC ULTRA[/b][/color]",
+                markup=True,
+                size_hint_y=None,
+                height=100,
+                font_size="30sp"
+            ))
+
+        title = Label(
+            text="[color=00E6FF][b]WILLKOMMEN BEI MAC ULTRA V1[/b][/color]",
+            markup=True,
+            size_hint_y=None,
+            height=55,
+            font_size="20sp"
+        )
+        root.add_widget(title)
+
+        welcome_text = """[color=FFFFFF]
+[b]Scan-Modi & Portal-Management[/b]
+
+[b]Dual-Engine Modus:[/b]
+Wähle zwischen MAC SCAN für klassische Portale
+oder M3U SCAN für User/Pass-Listen.
+
+[b]Multi-Portal Support:[/b]
+Prüfe einzelne URLs oder lade komplette
+Portal-Listen (.txt).
+
+[b]Favoriten-System:[/b]
+Speichere wichtige Portale direkt in der App.
+
+
+[b]Präzisions-Einstellungen[/b]
+
+[b]Random MAC Generator:[/b]
+Erzeuge automatisch viele MAC-Adressen
+basierend auf bekannten Präfixen.
+
+[b]Combo-File Import:[/b]
+Nutze eigene Combo-Listen
+für gezielte Prüfungen.
+
+[b]Bot-Steuerung:[/b]
+Reguliere Geschwindigkeit und
+parallele Prozesse.
+
+[b]Smart-Delay System:[/b]
+Nutze einstellbare Delays
+oder Smart-Modi.
+
+
+[b]Erweiterte Filter & Verbindung[/b]
+
+[b]Länder-Filter:[/b]
+Filtere Ergebnisse gezielt
+nach Ländern oder Kategorien.
+
+[b]Proxy-Support:[/b]
+Nutze eigene Proxy-Listen inklusive
+Stabilitätsprüfung.
+
+[b]Flexible Header-Profile:[/b]
+Verwendet verschiedene Geräte-
+und Client-Profile.
+
+
+[b]Detail-Ergebnisse[/b]
+
+[b]Detail-Modus:[/b]
+Zeigt zusätzliche Informationen wie
+Kanäle, Filme, Serien, Ablaufdatum
+und Kategorien.
+
+[b]Server-Info:[/b]
+Zeigt Server-IP, Provider und
+Länderinformationen an.
+
+
+[b]Output & Hits[/b]
+
+[b]Strukturierte Speicherung:[/b]
+Alle Treffer werden übersichtlich
+nach Portalen gespeichert.
+
+[b]Auto-M3U Link:[/b]
+Erzeugt automatisch passende
+M3U-Links.
+[/color]"""
 
         scroll = ScrollView(size_hint=(1, 1))
         intro_text = Label(
-            text=(
-                "[color=00E6FF][b]WILLKOMMEN BEI MAC ULTRA V1[/b][/color]\n\n"
-                "[b]1. Portal-Auswahl:[/b] Nutze Einzel-URLs, Listen oder Favoriten.\n\n"
-                "[b]2. Scan-Modus:[/b] Wähle zwischen MAC-Handshake oder M3U Login.\n\n"
-                "[b]3. Performance:[/b] Nutze Bots und Delay, um sauber zu arbeiten.\n\n"
-                "[b]4. Proxys:[/b] Nutze eigene Listen oder lade Gratis-Proxys.\n\n"
-                "[b]5. Detailgrad:[/b] Aktiviere 'ALLES SPEICHERN' für Filmlisten.\n\n"
-                "[b]6. Speicher:[/b] Combos liegen in /storage/emulated/0/Combo. Nutze den SPEICHER Button.\n\n"
-                "[b]7. Sicherheit:[/b] Nutzung nur mit freigegebener Android-ID.\n"
-            ),
+            text=welcome_text,
             markup=True,
             font_size="15sp",
             size_hint_y=None,
             halign="left",
-            valign="top",
+            valign="top"
+        )
+        intro_text.bind(width=lambda instance, value: setattr(instance, "text_size", (value, None)))
+        intro_text.bind(texture_size=lambda instance, value: setattr(instance, "height", value[1]))
+
+        scroll.add_widget(intro_text)
+        root.add_widget(scroll)
+
+        start_btn = Button(
+            text="ZUM SCANNER WEITER",
+            size_hint_y=None,
+            height=75,
+            font_size="18sp",
+            background_normal="",
+            background_color=(0.0, 0.45, 0.65, 1),
             color=(1, 1, 1, 1)
         )
-        intro_text.bind(size=intro_text.setter('text_size'))
-        intro_text.bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
-        scroll.add_widget(intro_text)
-        layout.add_widget(scroll)
+        start_btn.bind(on_press=self.go_to_scanner)
+        root.add_widget(start_btn)
+        self.add_widget(root)
 
-        start_btn = StyledButton(
-            text="ZUM SCANNER WEITERLEITEN",
-            size_hint_y=None,
-            height=80,
-            bg_color=(0, 0.25, 0.35, 1),
-            color=CYAN,
-            bold=True,
-            on_press=self.go_to_scanner
-        )
-        layout.add_widget(start_btn)
-        self.add_widget(layout)
-
-    def _update_rect(self, instance, value):
-        self.rect.pos = self.pos
-        self.rect.size = self.size
+    def _update_bg(self, *args):
+        self.bg_rect.pos = self.pos
+        self.bg_rect.size = self.size
 
     def go_to_scanner(self, *a):
-        self.manager.current = 'main'
+        self.manager.current = "main"
+
 
 
 class PortalManagerScreen(Screen):
@@ -494,23 +665,13 @@ class PortalManagerScreen(Screen):
     def load_favs(self):
         self.mac_list.clear_widgets()
         self.m3u_list.clear_widgets()
-        data = {"mac": [], "m3u": []}
 
-        if os.path.exists(FAV_FILE):
-            try:
-                with open(FAV_FILE, 'r', encoding="utf-8") as f:
-                    loaded = json.load(f)
-                    if isinstance(loaded, dict):
-                        data["mac"] = loaded.get("mac", [])
-                        data["m3u"] = loaded.get("m3u", [])
-            except Exception:
-                data = {"mac": [], "m3u": []}
+        data = load_favorites_data()
 
         for url in data.get("mac", []):
             self.mac_list.add_widget(self.create_entry(url, "mac"))
         for url in data.get("m3u", []):
             self.m3u_list.add_widget(self.create_entry(url, "m3u"))
-
 
     def create_entry(self, url, p_type):
         card = StyledCard(size_hint_y=None, height=70, padding=5, spacing=5)
@@ -524,24 +685,12 @@ class PortalManagerScreen(Screen):
             return
 
         p_type = "mac" if "MAC" in self.type_spinner.text else "m3u"
-        data = {"mac": [], "m3u": []}
-
-        if os.path.exists(FAV_FILE):
-            try:
-                with open(FAV_FILE, 'r', encoding="utf-8") as f:
-                    loaded = json.load(f)
-                    if isinstance(loaded, dict):
-                        data["mac"] = loaded.get("mac", [])
-                        data["m3u"] = loaded.get("m3u", [])
-            except Exception:
-                pass
+        data = load_favorites_data()
 
         if url not in data[p_type]:
             data[p_type].append(url)
 
-        os.makedirs(os.path.dirname(FAV_FILE), exist_ok=True)
-        with open(FAV_FILE, 'w', encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        saved_path = save_favorites_data(data)
 
         self.new_portal_input.text = ""
         self.load_favs()
@@ -550,36 +699,26 @@ class PortalManagerScreen(Screen):
             main = self.manager.get_screen('main')
             main.portal_input.text = url
             main.refresh_portal_lists()
-            main.update_log_safe("[color=00FF00][FAVORIT][/color] Favorit gespeichert.")
+            if saved_path:
+                main.update_log_safe(f"[color=00FF00][FAVORIT][/color] Favorit gespeichert: {saved_path}")
+            else:
+                main.update_log_safe("[color=FF0000][FAVORIT][/color] Favorit konnte nicht gespeichert werden. Speicherrechte prüfen.")
         except Exception:
             pass
 
-
     def delete_portal(self, url, p_type):
-        data = {"mac": [], "m3u": []}
-        if os.path.exists(FAV_FILE):
-            try:
-                with open(FAV_FILE, 'r', encoding="utf-8") as f:
-                    loaded = json.load(f)
-                    if isinstance(loaded, dict):
-                        data["mac"] = loaded.get("mac", [])
-                        data["m3u"] = loaded.get("m3u", [])
-            except Exception:
-                pass
+        data = load_favorites_data()
 
         if url in data.get(p_type, []):
             data[p_type].remove(url)
 
-        os.makedirs(os.path.dirname(FAV_FILE), exist_ok=True)
-        with open(FAV_FILE, 'w', encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-
+        save_favorites_data(data)
         self.load_favs()
+
         try:
             self.manager.get_screen('main').refresh_portal_lists()
         except Exception:
             pass
-
 
     def copy_and_back(self, url):
         Clipboard.copy(url); self.manager.get_screen('main').portal_input.text = url; self.manager.current = 'main'
@@ -635,9 +774,9 @@ class MagUltraScreen(Screen):
         combo_row.add_widget(self.refresh_combo_btn)
 
         random_row = BoxLayout(size_hint_y=None, height=85, spacing=10)
-        random_row.add_widget(Label(text="ANZAHL", color=YELLOW, size_hint_x=0.28, bold=True))
+        random_row.add_widget(Label(text="MAC-ANZAHL", color=YELLOW, size_hint_x=0.28, bold=True))
         self.random_count = TextInput(
-            text="1000",
+            text="",
             input_filter="int",
             multiline=False,
             size_hint_x=0.72,
@@ -677,7 +816,19 @@ class MagUltraScreen(Screen):
         self.box.add_widget(proxy_card)
         
         self.progress_label = Label(text="PROGRESS: 0 / 0", size_hint_y=None, height=20, color=CYAN); self.box.add_widget(self.progress_label); self.pbar = ProgressBar(max=100, value=0, size_hint_y=None, height=10); self.box.add_widget(self.pbar)
-        self.scroll = ScrollView(); self.log_display = Label(text="Ready...", font_size="14sp", size_hint_y=None, markup=True, halign="left", valign="top"); self.log_display.bind(size=self.log_display.setter('text_size')); self.scroll.add_widget(self.log_display); self.box.add_widget(self.scroll)
+        self.scroll = ScrollView()
+        self.log_display = Label(
+            text="Ready...",
+            font_size="14sp",
+            size_hint_y=None,
+            markup=True,
+            halign="left",
+            valign="top"
+        )
+        self.log_display.bind(width=lambda instance, value: setattr(instance, "text_size", (value, None)))
+        self.log_display.bind(texture_size=lambda instance, value: setattr(instance, "height", value[1] + 20))
+        self.scroll.add_widget(self.log_display)
+        self.box.add_widget(self.scroll)
         
         bottom_row = BoxLayout(size_hint_y=None, height=110, spacing=15)
         self.start_btn = StyledButton(text="START MAC ULTRA", size_hint_x=0.7, on_press=self.toggle, bg_color=(0.05, 0.15, 0.1, 1), color=GREEN)
@@ -686,6 +837,7 @@ class MagUltraScreen(Screen):
         self.box.add_widget(bottom_row)
         self.add_widget(self.box)
         Clock.schedule_once(lambda dt: self.refresh_file_lists(), 1)
+        Clock.schedule_once(lambda dt: self.refresh_portal_lists(), 1.2)
         Clock.schedule_once(lambda dt: self.check_storage_status(), 2)
 
     async def find_working_port(self, base_url):
@@ -742,7 +894,7 @@ class MagUltraScreen(Screen):
                 data = r.json()
                 if data.get('status') == 'success':
                     isp = data.get('isp', 'Unknown')
-                    is_vpn = " [🔒 VPN/DATA]" if data.get('hosting', False) or "VPN" in isp.upper() else ""
+                    is_vpn = " [VPNVPN/DATA]" if data.get('hosting', False) or "VPN" in isp.upper() else ""
                     return f"{data.get('countryCode', '??')}{is_vpn}"
         except: pass
         return "N/A"
@@ -823,8 +975,9 @@ class MagUltraScreen(Screen):
                 files.extend([f for f in os.listdir(folder) if f.lower().endswith(".txt")])
             except Exception:
                 pass
+
         files = sorted(set(files))
-        return files + ["USE SINGLE"]
+        return files + ["USE SINGLE"] if files else ["NO PORTAL LISTS FOUND", "USE SINGLE"]
 
     def paste_clip(self, *a): self.portal_input.text = Clipboard.paste().strip()
     def go_to_manager(self, *a): self.manager.get_screen('portals').load_favs(); self.manager.current = 'portals'
@@ -843,8 +996,11 @@ class MagUltraScreen(Screen):
     def check_storage_status(self, *a):
         if has_manage_all_files_access():
             self.update_log_safe("[color=00FF00][SPEICHER][/color] Alle-Dateien-Zugriff ist aktiv.")
+            self.update_log_safe(f"[color=FFFF00][FAVORIT][/color] Pfad: {get_fav_file_candidates()[0]}")
+            self.update_log_safe(f"[color=FFFF00][PORTALS][/color] Ordner: {get_data_dirs('Portals')[0]}")
         else:
             self.update_log_safe("[color=FF0000][SPEICHER][/color] Alle-Dateien-Zugriff fehlt. Button SPEICHER drücken.")
+            self.update_log_safe(f"[color=FFFF00][FAVORIT][/color] Fallback wird genutzt, falls Hauptspeicher nicht erlaubt ist.")
 
     def get_random_ip(self, geo):
         info = GEO_DATA.get(geo, GEO_DATA['DE']); return f"{random.choice(info['ip'])}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(2,254)}"
@@ -884,11 +1040,29 @@ class MagUltraScreen(Screen):
         if self.request_count % 50 == 0: await asyncio.sleep(random.uniform(5, 12))
         await asyncio.sleep(delay + random.uniform(0, 0.2))
 
-    def update_log_safe(self, t): Clock.schedule_once(lambda dt: self._do_log(t))
+    def update_log_safe(self, t):
+        Clock.schedule_once(lambda dt: self._do_log(t), 0)
+
     def _do_log(self, t):
         self.hit_list.append(t)
-        if len(self.hit_list) > 10: self.hit_list.pop(0)
-        self.log_display.text = "\n".join(self.hit_list); self.log_display.height = self.log_display.texture_size[1] + 20
+
+        if len(self.hit_list) > 25:
+            self.hit_list.pop(0)
+
+        self.log_display.text = "\n".join(self.hit_list)
+        self.log_display.texture_update()
+        self.log_display.height = self.log_display.texture_size[1] + 20
+
+        try:
+            self.scroll.scroll_y = 1
+        except Exception:
+            pass
+
+        try:
+            self.log_display.canvas.ask_update()
+            self.scroll.canvas.ask_update()
+        except Exception:
+            pass
 
     async def check_proxies_stable(self, ctx):
         total = len(self.proxy_list)
@@ -920,10 +1094,15 @@ class MagUltraScreen(Screen):
 
     async def engine(self):
         portals = []
-        if self.portal_file_spinner.text not in ["SELECT PORTAL LIST", "USE SINGLE"]:
-            p_path = first_existing_file(self.portal_file_spinner.text, get_data_dirs("Portals"))
-            if os.path.exists(p_path):
-                with open(p_path, 'r') as f: portals = [l.strip().split('/c')[0].rstrip('/') for l in f if l.strip().startswith("http")]
+        if self.portal_file_spinner.text not in ["SELECT PORTAL LIST", "USE SINGLE", "NO PORTAL LISTS FOUND"]:
+            selected_portal_list = os.path.basename(self.portal_file_spinner.text)
+            p_path = first_existing_file(selected_portal_list, get_data_dirs("Portals"))
+
+            if p_path and os.path.exists(p_path):
+                with open(p_path, 'r', errors='ignore') as f:
+                    portals = [l.strip().split('/c')[0].rstrip('/') for l in f if l.strip().startswith("http")]
+            else:
+                self.update_log_safe("[color=FF0000][PORTAL][/color] Portal-Liste nicht gefunden. Prüfe /storage/emulated/0/Portals.")
         if not portals:
             single = self.portal_input.text.strip().split('/c')[0].rstrip('/')
             if single.startswith("http"): portals = [single]
@@ -964,9 +1143,11 @@ class MagUltraScreen(Screen):
                 return
             with open(path, 'r', errors='ignore') as f:
                 self.combo_data = [l.strip() for l in f if l.strip()]
+            self.update_log_safe(f"[color=00FF00][OK][/color] Combo geladen: {len(self.combo_data)} Zeilen")
         else:
             prefix = self.prefix_spinner.text if self.prefix_spinner.text != "MAC's" else "00:1A:79:"
             self.combo_data = [f"{prefix}{':'.join([f'{random.randint(0,255):02X}' for _ in range(3)])}" for _ in range(int(self.random_count.text or 1000))]
+            self.update_log_safe(f"[color=00FF00][OK][/color] Random MACs erstellt: {len(self.combo_data)}")
         
         self.total_lines, self.checked, self.hits, self.start_time, self.request_count = len(self.combo_data), 0, 0, time.time(), 0
         Clock.schedule_once(lambda dt: setattr(self.pbar, 'max', self.total_lines))
@@ -1047,7 +1228,7 @@ class MagUltraScreen(Screen):
                                             s_c, s_l = len(r_sc), " «💢» ".join([c.get('category_name') for c in r_sc[:10]])
                                         except: pass
                                     
-                                    star = "⭐" if int(max_c) > 1 else ""
+                                    star = "*" if int(max_c) > 1 else ""
                                     self.hits += 1
                                     vpn_stat = await self.get_vpn_info_api(portal_ip)
                                     self.update_log_safe(f"[color=808080][{p_name}][/color] [color=00FF80][HIT {star}][/color] {u} | [color=00FFFF]{days}[/color]")
@@ -1083,7 +1264,7 @@ class MagUltraScreen(Screen):
                                 s_l = " «💢» ".join([c.get('title') for c in cat_s.get('js', [])[:10]])
                             except: pass
                         
-                        star = "⭐" if int(max_c) > 1 else ""
+                        star = "*" if int(max_c) > 1 else ""
                         self.hits += 1
                         vpn_stat = await self.get_vpn_info_api(portal_ip)
                         # Syntax-Fehler behoben (self. update_log_safe)
@@ -1120,25 +1301,24 @@ class MagUltraScreen(Screen):
     def save_hit(self, portal, portal_ip, server_h, id_val, exp, days, pw, live, movies, series, sn, dev_id, l_list, m_list, s_list, tz_val, active_conn, max_conn, is_m3u=False, cre_date="N/A", vpn_info="N/A"):
         sub_folder = "M3U_Hits" if is_m3u else "MAC_Hits"
         final_dir = os.path.join(first_writable_dir("Hits"), "MAC-ULTRA-Hits", sub_folder)
-        if not os.path.exists(final_dir):
-            os.makedirs(final_dir, exist_ok=True)
-        
+        os.makedirs(final_dir, exist_ok=True)
+
         domain = portal.replace("http://", "").replace("https://", "").split(":")[0].replace("/", "_")
         m3u = f"{portal}/get.php?mac={id_val}&type=m3u_plus&output=ts" if not is_m3u else f"{portal}/get.php?username={id_val}&password={pw}&output=ts"
-        
+
         id_label = "MAC" if not is_m3u else "USER"
-        
+
         try:
             p_parts = self.portal_isp.split('|')
             nation_part = p_parts[0].strip() if len(p_parts) > 0 else "Unknown"
             provider_part = p_parts[1].strip() if len(p_parts) > 1 else "Unknown"
-        except:
+        except Exception:
             nation_part, provider_part = "Unknown", "Unknown"
 
         box = f"""
 ██████████████████████████████████
 █
-█   ⚡  𝗠𝗔𝗖 𝗨𝗟𝗧𝗥𝗔 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗩𝟮.𝟬  ⚡
+█   ⚡  𝗠𝗔𝗖 𝗨𝗟𝗧𝗥𝗔 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗩1  ⚡
 █   👤  ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ ᴍᴏʀᴘʜᴇᴜs
 █
 ██████████████████████████████████
@@ -1185,14 +1365,23 @@ SERVER 🌐 INFO
 🔗 M3U LINK:
 {m3u}
 """
-        if l_list: box += f"\n📂 LIVE LIST\n╚┈❲ {l_list} ❳"
-        if m_list: box += f"\n🎬 MOVIE LIST\n╚┈❲ {m_list} ❳"
-        if s_list: box += f"\n🎞️ SERIES LIST\n╚┈❲ {s_list} ❳"
-        
+
+        if l_list:
+            box += f"\n📂 LIVE LIST\n╚┈❲ {l_list} ❳"
+        if m_list:
+            box += f"\n🎬 MOVIE LIST\n╚┈❲ {m_list} ❳"
+        if s_list:
+            box += f"\n🎞️ SERIES LIST\n╚┈❲ {s_list} ❳"
+
         box += f"\n\n🛰️ SCANNED: {time.strftime('%H:%M')} | {time.strftime('%d.%m.%Y')}\n██████████████████████████████████████████\n\n"
-        
-        with open(os.path.join(final_dir, f"{domain}.txt"), "a", encoding="utf-8") as f:
-            f.write(box)
+
+        hit_file = os.path.join(final_dir, f"{domain}.txt")
+
+        try:
+            with open(hit_file, "a", encoding="utf-8") as f:
+                f.write(box)
+        except Exception as e:
+            self.update_log_safe(f"[color=FF0000][SAVE ERROR][/color] {e}")
 
     def refresh_ui(self, *a):
         self.pbar.value = self.checked
@@ -1204,14 +1393,62 @@ SERVER 🌐 INFO
             self.cpm_label.text = str(int((self.checked / el) * 60))
 
 class MagApp(App):
+
     def build(self):
+
         self.title = "MAC ULTRA"
+
+        # =========================
+        # DEVICE CHECK
+        # =========================
+
+        try:
+            allowed, msg = asyncio.run(
+                github_device_allowed()
+            )
+
+        except Exception as e:
+
+            allowed = False
+            msg = str(e)
+
+        if not allowed:
+
+            root = BoxLayout(
+                orientation="vertical",
+                padding=30,
+                spacing=20
+            )
+
+            root.add_widget(Label(
+                text=(
+                    "[color=FF0000]"
+                    "[b]ZUGRIFF VERWEIGERT[/b]"
+                    "[/color]\n\n"
+                    f"{msg}"
+                ),
+                markup=True,
+                font_size="18sp"
+            ))
+
+            return root
+
         sm = ScreenManager()
-        sm.add_widget(SecurityGateScreen(name='security'))
-        sm.add_widget(IntroScreen(name='intro'))
-        sm.add_widget(MagUltraScreen(name='main'))
-        sm.add_widget(PortalManagerScreen(name='portals'))
-        sm.current = "security"
+
+        sm.add_widget(
+            IntroScreen(name="intro")
+        )
+
+        sm.add_widget(
+            MagUltraScreen(name="main")
+        )
+
+        sm.add_widget(
+            PortalManagerScreen(name="portals")
+        )
+
+        sm.current = "intro"
+
         return sm
 
 if __name__ == "__main__":
