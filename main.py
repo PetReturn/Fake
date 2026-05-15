@@ -1418,8 +1418,8 @@ class MagApp(App):
 
             root = BoxLayout(
                 orientation="vertical",
-                padding=[28, 45, 28, 28],
-                spacing=18
+                padding=[16, 16, 16, 16],
+                spacing=0
             )
 
             with root.canvas.before:
@@ -1436,6 +1436,30 @@ class MagApp(App):
 
             root.bind(pos=update_root_bg, size=update_root_bg)
 
+            outer = BoxLayout(
+                orientation="vertical",
+                spacing=0
+            )
+
+            outer.add_widget(Label(
+                text="",
+                size_hint_y=0.12
+            ))
+
+            scroll = ScrollView(
+                size_hint=(1, 0.76),
+                do_scroll_x=False,
+                do_scroll_y=True
+            )
+
+            card = StyledCard(
+                orientation="vertical",
+                padding=[18, 22, 18, 18],
+                spacing=12,
+                size_hint_y=None,
+                height=610
+            )
+
             title = Label(
                 text=(
                     "[color=00E6FF]"
@@ -1446,18 +1470,19 @@ class MagApp(App):
                     "[/color]"
                 ),
                 markup=True,
-                font_size="26sp",
+                font_size="24sp",
                 size_hint_y=None,
-                height=110,
-                halign="center"
+                height=82,
+                halign="center",
+                valign="middle"
             )
 
-            info_card = StyledCard(
-                orientation="vertical",
-                padding=18,
-                spacing=12,
-                size_hint_y=None,
-                height=250
+            title.bind(
+                width=lambda instance, value: setattr(
+                    instance,
+                    "text_size",
+                    (value, None)
+                )
             )
 
             info_text = Label(
@@ -1466,69 +1491,57 @@ class MagApp(App):
                     "Dieses Gerät ist noch nicht freigeschaltet.\n\n"
                     "Bitte sende deine Android-ID an den Administrator, "
                     "damit dein Zugang aktiviert werden kann.\n\n"
-                    "[color=FFFF00]Hinweis:[/color] Nach der Freischaltung "
-                    "die App bitte neu starten."
+                    "[color=FFFF00]Nach der Freischaltung[/color] "
+                    "die App bitte einmal neu starten."
                     "[/color]"
                 ),
                 markup=True,
-                font_size="17sp",
+                font_size="16sp",
                 halign="center",
-                valign="middle"
+                valign="middle",
+                size_hint_y=None,
+                height=165
             )
+
             info_text.bind(
                 width=lambda instance, value: setattr(
                     instance,
                     "text_size",
-                    (value, None)
+                    (max(value - 16, 100), None)
                 )
             )
-
-            reason_text = Label(
-                text=(
-                    "[color=AAAAAA]"
-                    f"{msg}"
-                    "[/color]"
-                ),
-                markup=True,
-                font_size="13sp",
-                halign="center",
-                size_hint_y=None,
-                height=55
-            )
-
-            info_card.add_widget(info_text)
-            info_card.add_widget(reason_text)
 
             id_label = Label(
                 text="[color=00E6FF][b]DEINE ANDROID-ID[/b][/color]",
                 markup=True,
-                font_size="16sp",
+                font_size="15sp",
                 size_hint_y=None,
-                height=35
+                height=34,
+                halign="center"
             )
 
             id_box = TextInput(
                 text=str(android_id),
                 readonly=True,
                 multiline=False,
-                font_size="20sp",
+                font_size="19sp",
                 size_hint_y=None,
-                height=72,
+                height=64,
                 background_color=(0.08, 0.10, 0.14, 1),
                 foreground_color=(0, 0.9, 1, 1),
                 cursor_color=(0, 0.9, 1, 1),
                 halign="center",
-                padding=[10, 20]
+                padding=[10, 17]
             )
 
             copy_btn = StyledButton(
                 text="ANDROID-ID KOPIEREN",
                 size_hint_y=None,
-                height=76,
+                height=68,
                 bg_color=(0.05, 0.18, 0.12, 1),
                 color=GREEN,
                 bold=True,
-                font_size="17sp"
+                font_size="16sp"
             )
 
             def copy_android_id(instance):
@@ -1537,6 +1550,50 @@ class MagApp(App):
 
             copy_btn.bind(on_press=copy_android_id)
 
+            reason_text = Label(
+                text=(
+                    "[color=888888]"
+                    f"{msg}"
+                    "[/color]"
+                ),
+                markup=True,
+                font_size="12sp",
+                halign="center",
+                valign="middle",
+                size_hint_y=None,
+                height=65
+            )
+
+            reason_text.bind(
+                width=lambda instance, value: setattr(
+                    instance,
+                    "text_size",
+                    (max(value - 16, 100), None)
+                )
+            )
+
+            admin_text = Label(
+                text=(
+                    "[color=AAAAAA]"
+                    "Bitte diese ID kopieren und an den Admin senden."
+                    "[/color]"
+                ),
+                markup=True,
+                font_size="13sp",
+                halign="center",
+                valign="middle",
+                size_hint_y=None,
+                height=38
+            )
+
+            admin_text.bind(
+                width=lambda instance, value: setattr(
+                    instance,
+                    "text_size",
+                    (max(value - 16, 100), None)
+                )
+            )
+
             footer = Label(
                 text=(
                     "[color=666666]"
@@ -1544,17 +1601,30 @@ class MagApp(App):
                     "[/color]"
                 ),
                 markup=True,
-                font_size="15sp",
+                font_size="14sp",
                 size_hint_y=None,
-                height=55
+                height=38,
+                halign="center"
             )
 
-            root.add_widget(title)
-            root.add_widget(info_card)
-            root.add_widget(id_label)
-            root.add_widget(id_box)
-            root.add_widget(copy_btn)
-            root.add_widget(footer)
+            card.add_widget(title)
+            card.add_widget(info_text)
+            card.add_widget(id_label)
+            card.add_widget(id_box)
+            card.add_widget(copy_btn)
+            card.add_widget(reason_text)
+            card.add_widget(admin_text)
+            card.add_widget(footer)
+
+            scroll.add_widget(card)
+            outer.add_widget(scroll)
+
+            outer.add_widget(Label(
+                text="",
+                size_hint_y=0.12
+            ))
+
+            root.add_widget(outer)
 
             return root
 
