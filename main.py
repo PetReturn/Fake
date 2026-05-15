@@ -1418,8 +1418,7 @@ class MagApp(App):
 
             root = BoxLayout(
                 orientation="vertical",
-                padding=[16, 16, 16, 16],
-                spacing=0
+                padding=[25, 25, 25, 25]
             )
 
             with root.canvas.before:
@@ -1436,63 +1435,52 @@ class MagApp(App):
 
             root.bind(pos=update_root_bg, size=update_root_bg)
 
-            outer = BoxLayout(
-                orientation="vertical",
-                spacing=0
-            )
-
-            outer.add_widget(Label(
+            # Abstand oben
+            root.add_widget(Label(
                 text="",
                 size_hint_y=0.12
             ))
 
-            scroll = ScrollView(
-                size_hint=(1, 0.76),
-                do_scroll_x=False,
-                do_scroll_y=True
-            )
-
+            # Hauptkarte
             card = StyledCard(
                 orientation="vertical",
-                padding=[18, 22, 18, 18],
-                spacing=12,
-                size_hint_y=None,
-                height=610
+                padding=[22, 28, 22, 24],
+                spacing=18,
+                size_hint=(1, 0.62),
+                bg_color=(0.04, 0.07, 0.12, 1)
             )
 
             title = Label(
                 text=(
-                    "[color=00E6FF]"
-                    "[b]MAC ULTRA[/b]"
-                    "[/color]\n"
-                    "[color=FF3333]"
-                    "[b]ZUGRIFF GESPERRT[/b]"
-                    "[/color]"
+                    "[color=00E6FF][b]MAC ULTRA[/b][/color]"
                 ),
                 markup=True,
-                font_size="24sp",
+                font_size="30sp",
+                bold=True,
                 size_hint_y=None,
-                height=82,
-                halign="center",
-                valign="middle"
+                height=50,
+                halign="center"
             )
 
-            title.bind(
-                width=lambda instance, value: setattr(
-                    instance,
-                    "text_size",
-                    (value, None)
-                )
+            status = Label(
+                text=(
+                    "[color=FF4444][b]GERÄT NICHT FREIGESCHALTET[/b][/color]"
+                ),
+                markup=True,
+                font_size="20sp",
+                size_hint_y=None,
+                height=40,
+                halign="center"
             )
 
-            info_text = Label(
+            message = Label(
                 text=(
                     "[color=FFFFFF]"
-                    "Dieses Gerät ist noch nicht freigeschaltet.\n\n"
+                    "Dieses Gerät besitzt aktuell keine aktive Freischaltung.
+
+"
                     "Bitte sende deine Android-ID an den Administrator, "
-                    "damit dein Zugang aktiviert werden kann.\n\n"
-                    "[color=FFFF00]Nach der Freischaltung[/color] "
-                    "die App bitte einmal neu starten."
+                    "damit dein Zugang aktiviert werden kann."
                     "[/color]"
                 ),
                 markup=True,
@@ -1500,131 +1488,97 @@ class MagApp(App):
                 halign="center",
                 valign="middle",
                 size_hint_y=None,
-                height=165
+                height=120
             )
 
-            info_text.bind(
+            message.bind(
                 width=lambda instance, value: setattr(
                     instance,
                     "text_size",
-                    (max(value - 16, 100), None)
+                    (value - 20, None)
                 )
             )
 
-            id_label = Label(
-                text="[color=00E6FF][b]DEINE ANDROID-ID[/b][/color]",
+            id_title = Label(
+                text="[color=00E6FF][b]ANDROID-ID[/b][/color]",
                 markup=True,
                 font_size="15sp",
                 size_hint_y=None,
-                height=34,
-                halign="center"
+                height=28
             )
 
             id_box = TextInput(
                 text=str(android_id),
                 readonly=True,
                 multiline=False,
-                font_size="19sp",
+                font_size="22sp",
                 size_hint_y=None,
-                height=64,
-                background_color=(0.08, 0.10, 0.14, 1),
-                foreground_color=(0, 0.9, 1, 1),
-                cursor_color=(0, 0.9, 1, 1),
+                height=68,
+                background_color=(0.08, 0.10, 0.15, 1),
+                foreground_color=(0, 0.95, 1, 1),
+                cursor_color=(0, 0.95, 1, 1),
                 halign="center",
-                padding=[10, 17]
+                padding=[10, 18]
             )
 
             copy_btn = StyledButton(
                 text="ANDROID-ID KOPIEREN",
                 size_hint_y=None,
-                height=68,
-                bg_color=(0.05, 0.18, 0.12, 1),
-                color=GREEN,
+                height=72,
+                bg_color=(0.02, 0.25, 0.14, 1),
+                color=(0, 1, 0.5, 1),
                 bold=True,
-                font_size="16sp"
+                font_size="17sp"
             )
 
             def copy_android_id(instance):
                 Clipboard.copy(str(android_id))
-                copy_btn.text = "ID KOPIERT ✓"
+                copy_btn.text = "ID ERFOLGREICH KOPIERT ✓"
 
             copy_btn.bind(on_press=copy_android_id)
 
-            reason_text = Label(
-                text=(
-                    "[color=888888]"
-                    f"{msg}"
-                    "[/color]"
-                ),
-                markup=True,
-                font_size="12sp",
-                halign="center",
-                valign="middle",
-                size_hint_y=None,
-                height=65
-            )
-
-            reason_text.bind(
-                width=lambda instance, value: setattr(
-                    instance,
-                    "text_size",
-                    (max(value - 16, 100), None)
-                )
-            )
-
-            admin_text = Label(
+            admin = Label(
                 text=(
                     "[color=AAAAAA]"
-                    "Bitte diese ID kopieren und an den Admin senden."
+                    "Sende diese ID an den Admin für die Aktivierung."
                     "[/color]"
                 ),
                 markup=True,
                 font_size="13sp",
-                halign="center",
-                valign="middle",
                 size_hint_y=None,
-                height=38
-            )
-
-            admin_text.bind(
-                width=lambda instance, value: setattr(
-                    instance,
-                    "text_size",
-                    (max(value - 16, 100), None)
-                )
+                height=32,
+                halign="center"
             )
 
             footer = Label(
                 text=(
-                    "[color=666666]"
+                    "[color=555555]"
                     "Created by Morpheus"
                     "[/color]"
                 ),
                 markup=True,
                 font_size="14sp",
                 size_hint_y=None,
-                height=38,
+                height=26,
                 halign="center"
             )
 
             card.add_widget(title)
-            card.add_widget(info_text)
-            card.add_widget(id_label)
+            card.add_widget(status)
+            card.add_widget(message)
+            card.add_widget(id_title)
             card.add_widget(id_box)
             card.add_widget(copy_btn)
-            card.add_widget(reason_text)
-            card.add_widget(admin_text)
+            card.add_widget(admin)
             card.add_widget(footer)
 
-            scroll.add_widget(card)
-            outer.add_widget(scroll)
+            root.add_widget(card)
 
-            outer.add_widget(Label(
+            # Abstand unten
+            root.add_widget(Label(
                 text="",
-                size_hint_y=0.12
+                size_hint_y=0.18
             ))
-
-            root.add_widget(outer)
 
             return root
 

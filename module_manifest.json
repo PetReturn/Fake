@@ -1,6 +1,6 @@
 {
     "enabled": true,
-    "version": "2026.05.15.2141",
+    "version": "2026.05.15.2209",
     "required": [
         "remote_gui",
         "remote_core",
@@ -11,50 +11,50 @@
             "file": "remote_gui.py",
             "exists": true,
             "sha256": "648391876945bd6a4195f275d77ac247d98351221fc4817885c0af534e394907",
-            "updated_at": "2026-05-15 21:41:59"
+            "updated_at": "2026-05-15 22:09:00"
         },
         "remote_core": {
             "file": "remote_core.py",
             "exists": true,
             "sha256": "182ebad5cbe17da926f160d5a541d28c43bd7212a4ea5cabd7dcc67246a51c0d",
-            "updated_at": "2026-05-15 21:41:59"
+            "updated_at": "2026-05-15 22:09:00"
         },
         "ui_config": {
             "file": "ui_config.json",
             "exists": true,
             "sha256": "648391876945bd6a4195f275d77ac247d98351221fc4817885c0af534e394907",
-            "updated_at": "2026-05-15 21:41:59"
+            "updated_at": "2026-05-15 22:09:00"
         },
         "png": {
             "file": "mac-ultra.png",
             "exists": true,
             "sha256": "ec1d0996e999c62f7ad321eb04a3298c35700ef77ce576ab486516ca94a89911",
-            "updated_at": "2026-05-15 21:41:59"
+            "updated_at": "2026-05-15 22:09:00"
         },
         "mp3": {
             "file": "music.mp3",
             "exists": true,
             "sha256": "c730d680fa96a3e04e9a1f095a70a8ace3f47d45f8c205b92aa524d95131ce56",
-            "updated_at": "2026-05-15 21:41:59"
+            "updated_at": "2026-05-15 22:09:00"
         },
         "apk_main": {
             "file": "main.py",
             "exists": true,
-            "sha256": "3767515b842882f1152491239c643537c49c659dae2b5ce6247f465e6d14dd78",
-            "updated_at": "2026-05-15 21:41:59"
+            "sha256": "1db3eb8d1584c5200d7ff21f23818f6290356f992ce951e367af61579a227bb9",
+            "updated_at": "2026-05-15 22:09:00"
         },
         "buildozer_spec": {
             "file": "buildozer.spec",
             "exists": true,
             "sha256": "5e58b899792dbe887671d2d27fe4e13d63bd9e12acc204376bc02ba9dc135460",
-            "updated_at": "2026-05-15 21:41:59"
+            "updated_at": "2026-05-15 22:09:00"
         },
         "github_workflow": {
             "file": ".github/workflows/build.yml",
             "exists": true,
             "sha256": "ebe7366ccf954455a124d92e94c92285a7cf609172685e371a423f9183f2e77a",
-            "updated_at": "2026-05-15 21:41:59"
+            "updated_at": "2026-05-15 22:09:00"
         }
     },
-    "updated_at": "2026-05-15 21:41:59"
+    "updated_at": "2026-05-15 22:09:00"
 }
