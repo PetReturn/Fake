@@ -1,7 +1,14 @@
 {
     "master_pin": "0410",
     "system_active": true,
-    "allowed_devices": [],
+    "allowed_devices": [
+        {
+            "name": "Morpheus",
+            "android_id": "6246bb9be0d7ba4a",
+            "active": true,
+            "created_at": "2026-05-16 00:46:38"
+        }
+    ],
     "assets": {
         "png": "mac-ultra.png",
         "mp3": "music.mp3",
@@ -38,5 +45,5 @@
             "updated_at": "2026-05-16 00:24:12"
         }
     },
-    "updated_at": "2026-05-16 00:46:16"
+    "updated_at": "2026-05-16 00:46:38"
 }
