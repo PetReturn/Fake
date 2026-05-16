@@ -37,13 +37,16 @@
         },
         "apk_build": {
             "enabled": true,
-            "main_source": "MAC-ULTRA-V1.py",
+            "main_source": "MAC-ULTRA-V1.dat",
             "main_target": "main.py",
+            "payload_target": "app_payload.dat",
+            "payload_compression": "zlib",
+            "payload_input_type": "dat",
             "buildozer_spec": "buildozer.spec",
             "workflow": ".github/workflows/build.yml",
             "artifact_name": "MAC-ULTRA-APK",
-            "updated_at": "2026-05-16 00:24:12"
+            "updated_at": "2026-05-16 09:49:30"
         }
     },
-    "updated_at": "2026-05-16 07:07:51"
+    "updated_at": "2026-05-16 09:49:30"
 }

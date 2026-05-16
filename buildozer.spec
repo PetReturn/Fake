@@ -5,7 +5,7 @@ package.name = macultra
 package.domain = org.morpheus
 
 source.dir = .
-source.include_exts = py,png,jpg,jpeg,kv,atlas,json,mp3,wav,ogg
+source.include_exts = py,png,jpg,jpeg,kv,atlas,json,mp3,wav,ogg,dat
 source.include_patterns = assets/*,*.png,*.mp3
 
 version = 1.0.0
